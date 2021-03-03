@@ -1,0 +1,23 @@
+{
+  "name": "iplus-backend",
+  "version": "1.0.0",
+  "description": "backend for iplus website",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "statr": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/filippovarini/iPlus-backend.git"
+  },
+  "author": "Filippo Varini",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/filippovarini/iPlus-backend/issues"
+  },
+  "homepage": "https://github.com/filippovarini/iPlus-backend#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
