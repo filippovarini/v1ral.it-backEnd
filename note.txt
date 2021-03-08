@@ -1,1 +1,7 @@
 1. No @ permitted in username
+
+CODES:
+401: not authorized
+
+RESPONSE FORMAT:
+{successful, message(ITA)}

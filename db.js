@@ -1,5 +1,5 @@
 const Pool = require("pg").Pool;
-const keys = require("./keys/dev").psqlKeys;
+const keys = require("./keys/dev").psql;
 
 const pool = new Pool(keys);
 
