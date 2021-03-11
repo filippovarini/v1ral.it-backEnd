@@ -1,4 +1,12 @@
-1. No @ permitted in username
+No @ permitted in username
+Country = Italy mandatory
+
+
+// DATABASE
+username VARCHAR(40/100)
+email VARCHAR(255)
+psw VARCHAR(255)
+
 
 CODES:
 401: not authorized

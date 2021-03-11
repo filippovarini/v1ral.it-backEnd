@@ -3,10 +3,13 @@ const path = require("path");
 const session = require("express-session");
 const mongoose = require("mongoose");
 const MongoDBSession = require("connect-mongodb-session")(session);
-const pool = require("./db");
+const pool = require("./db/db");
 
 // routers
 const challengerRouter = require("./routes/Challenger");
+
+// functions
+const getUser = require("./HelperFunctions/getUser");
 
 const sessionSecret = require("./keys/dev").session;
 
@@ -57,24 +60,17 @@ const checkAuth = (req, res, next) => {
 //routers
 app.use("/challenger", challengerRouter);
 
-app.get("/", shit, (req, res) => {
+app.get("/", (req, res) => {
   console.log(req.alfa);
   res.sendFile(path.resolve(__dirname, "client", "index.html"));
 });
 
-// app.get("/see", async (req, res) => {
-//   pool
-//     .query("SELECT * FROM workplace;")
-//     .then(r => res.json(r))
-//     .catch(e => {
-//       console.log(e.message);
-//       res.send("shit");
-//     });
-// });
-
-// app.use("*", (_, res) => {
-//   res.status(404).send("404 - nothing found");
-// });
+app.get("/shit", async (req, res) => {
+  console.log("sending");
+  const user = await getUser("@sant.ippo");
+  console.log(user);
+  res.json({ user });
+});
 
 app.listen(port, () => {
   console.log(`Listening on port ${port}...`);
