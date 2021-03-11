@@ -10,6 +10,7 @@ psw VARCHAR(255)
 
 CODES:
 401: not authorized
+500: server error
 
 RESPONSE FORMAT:
 {successful, message(ITA)}

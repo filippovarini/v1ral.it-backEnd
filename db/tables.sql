@@ -31,26 +31,29 @@ CREATE TABLE "user"
     postcode INTEGER NOT NULL,
     profileUrl VARCHAR(512) NOT NULL,
     psw VARCHAR(256) NOT NULL,
-    reason VARCHAR(256) NOT NULL,
+    reason VARCHAR(256) NOT NULL
 );
 
 CREATE TABLE "premium"
 (
-    shop SERIAL NOT NULL PRIMARY KEY,
-    "user" VARCHAR(32) NOT NULL PRIMARY KEY,
-    price INTEGER NOT NULL
+    shop SERIAL NOT NULL,
+    "user" VARCHAR(32) NOT NULL,
+    price INTEGER NOT NULL,
+    PRIMARY KEY (shop, "user")
 );
 
-CREATE TABLE "servive"
+CREATE TABLE "service"
 (
-    shop SERIAL NOT NULL PRIMARY KEY,
-    name VARCHAR(64) NOT NULL PRIMARY KEY,
-    image VARCHAR(512) NOT NULL
-)
+    shop SERIAL NOT NULL,
+    name VARCHAR(64) NOT NULL,
+    image VARCHAR(512) NOT NULL,
+    PRIMARY KEY (shop, name)
+);
 
-CREATE TABLE "servive"
+CREATE TABLE "goal"
 (
-    shop SERIAL NOT NULL PRIMARY KEY,
-    name VARCHAR(64) NOT NULL PRIMARY KEY,
-    amount INTEGER NOT NULL
-)
+    shop SERIAL NOT NULL,
+    name VARCHAR(64) NOT NULL,
+    amount INTEGER NOT NULL,
+    PRIMARY KEY (shop, name)
+);
