@@ -5,7 +5,7 @@ const router = express.Router();
 // queries
 const shops = require("../db/queries/shops");
 
-router.get("/name/:searchId", async (req, res) => {
+router.get("/name/:searchId/:city/:category", async (req, res) => {
   try {
     const shopList = await shops.getByName(req.params.searchId);
     res.json({ success: true, shops: shopList });
