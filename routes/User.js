@@ -20,7 +20,23 @@ router.get("/usernameCheck/:username", async (req, res) => {
   } catch (e) {
     console.log(e);
     res.status(500).json({
-      message: "Errore accaduto nel controllare l'originalità dell'username"
+      message: "Errore nel controllare l'originalità dell'username"
+    });
+  }
+});
+
+/**
+ * Find list of users with similar username
+ * Pre: Already checked that the username is ONLY ONE WORD
+ */
+router.get("/name/:username", async (req, res) => {
+  try {
+    const users = await userQueries.getByName(req.params.username);
+    res.json({ success: true, users });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      message: "Errore nella ricerca di profili con l'username da te inserito"
     });
   }
 });
@@ -90,11 +106,6 @@ router.post("/login", async (req, res) => {
     console.log(e);
     res.status(500).json({ message: "Errore nel completamento del login" });
   }
-});
-
-router.get("/", (req, res) => {
-  console.log("user");
-  res.send("user");
 });
 
 module.exports = router;

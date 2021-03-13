@@ -24,7 +24,7 @@ router.get("/home/quickFacts", async (req, res) => {
 
 router.get("/home/shops", async (req, res) => {
   try {
-    const shopList = await shops.list();
+    const shopList = await shops.getList();
     res.json({ shopList });
   } catch (e) {
     console.log(e);
@@ -34,7 +34,7 @@ router.get("/home/shops", async (req, res) => {
 
 router.get("/home/users", async (req, res) => {
   try {
-    const userList = await users.list();
+    const userList = await users.getList();
     res.json({ userList });
   } catch (e) {
     console.log(e);

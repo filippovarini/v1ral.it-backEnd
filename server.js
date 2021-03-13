@@ -6,7 +6,8 @@ const MongoDBSession = require("connect-mongodb-session")(session);
 
 // routers
 const userRouter = require("./routes/User");
-const pageRouter = require("./routes/Pages");
+const pageRouter = require("./routes/Page");
+const shopRouter = require("./routes/Shop");
 
 const sessionSecret = require("./keys/dev").session;
 
@@ -47,6 +48,11 @@ app.use(
 //routers
 app.use("/user", userRouter);
 app.use("/page", pageRouter);
+app.use("/shop", shopRouter);
+
+app.get("/error", (req, res) => {
+  res.send("in server");
+});
 
 app.get("/", (req, res) => {
   res.sendFile(path.resolve(__dirname, "client", "index.html"));

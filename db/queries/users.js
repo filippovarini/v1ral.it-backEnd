@@ -1,7 +1,17 @@
 const pool = require("../db");
 
 const userQueries = {
-  list: async () => {
+  getByName: async username => {
+    const pattern = `%${username}%`;
+    const users = await pool.query(
+      'SELECT username, profileurl\
+      FROM "user"\
+      WHERE LOWER(username) LIKE $1',
+      [pattern]
+    );
+    return users.rows;
+  },
+  getList: async () => {
     const users = await pool.query(
       'SELECT "user".username, "user".type, COALESCE(data.rt, 0) AS rt, COALESCE(data.number, 0) AS number\
             FROM "user" LEFT JOIN ((SELECT challenger, COUNT(*) AS rt \
