@@ -2,6 +2,9 @@ const express = require("express");
 
 const router = express.Router();
 
+// middlewares
+const checkShopSI = require("../middlewares/CheckShopSI");
+
 // queries
 const cases = require("../db/queries/cases");
 const shops = require("../db/queries/shops");
@@ -39,6 +42,20 @@ router.get("/home/users", async (req, res) => {
   } catch (e) {
     console.log(e);
     res.status(500).json({ message: "Errore nella richiesta di dati" });
+  }
+});
+
+/* SEARCH SHOP RESULT */
+router.get("/searchResult", checkShopSI, async (req, res) => {
+  const { name, city, category } = req.session.shopSI;
+  try {
+    const shopList = await shops.getFromSearch(name, city, category);
+    res.json({ success: true, shops: shopList });
+  } catch (e) {
+    console.log(e);
+    res
+      .status(500)
+      .json({ message: "Errore nella ricerca delle imprese nel database" });
   }
 });
 

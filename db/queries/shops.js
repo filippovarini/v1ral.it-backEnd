@@ -9,14 +9,23 @@ const shopsQueries = {
   /**
    * Get shops by name inserted. Using patterns to get flexible search
    */
-  getByName: async name => {
-    const patterns = name
+  getFromSearch: async (name, city, category) => {
+    const namePatterns = name
       .toLowerCase()
       .split(" ")
       .filter(str => str !== "") // make it work even with multiple spaces
       .map((str, i) => (i == 0 ? `%${str}%` : ` ${str}%`))
       .join("");
-    const shops = await pool.query(singleQuery, [patterns]);
+    const nameFilter = " WHERE LOWER(name) LIKE $1";
+    const cityFilter = city ? ` AND LOWER(city) LIKE '%${city}%'` : "";
+    const categoryFilter = category
+      ? ` AND LOWER(category) LIKE '%${category}%'`
+      : "";
+
+    const shops = await pool.query(
+      listQuery + nameFilter + cityFilter + categoryFilter,
+      [namePatterns]
+    );
     return shops.rows;
   }
 };
@@ -44,7 +53,5 @@ FROM
         ) AS goals
   GROUP BY goals.shop, goals.total) AS goalsDone
 ON shop.id = goalsDone.shop`;
-
-const singleQuery = listQuery + " WHERE LOWER(name) LIKE $1";
 
 module.exports = shopsQueries;

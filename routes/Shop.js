@@ -2,19 +2,27 @@ const express = require("express");
 
 const router = express.Router();
 
-// queries
-const shops = require("../db/queries/shops");
+/**
+ * Update shopSI:
+ * {[si to be updated]: text - null (deactivated)}
+ *
+ */
+router.put("/updateSI", (req, res) => {
+  req.session.shopSI
+    ? Object.keys(req.body.shopSI).forEach(
+        key => (req.session.shopSI[key] = req.body.shopSI[key])
+      )
+    : (req.session.shopSI = req.body.shopSI);
 
-router.get("/name/:searchId/:city/:category", async (req, res) => {
-  try {
-    const shopList = await shops.getByName(req.params.searchId);
-    res.json({ success: true, shops: shopList });
-  } catch (e) {
-    console.log(e);
-    res
-      .status(500)
-      .json({ message: "Errore nella ricerca delle imprese nel database" });
-  }
+  res.json({ success: true });
+});
+
+/**
+ * Clear search session
+ */
+router.delete("/clearSearch", (req, res) => {
+  req.session.shopSI = null;
+  res.json({ success: true });
 });
 
 module.exports = router;
