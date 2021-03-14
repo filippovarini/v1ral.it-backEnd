@@ -1,5 +1,10 @@
 const pool = require("../db");
 
+/**
+ * Shop Queries
+ * !! AT the moment NOT OPTIMIZED
+ * @todo Optimize queries
+ */
 const shopsQueries = {
   getList: async () => {
     const shops = await pool.query(listQuery);
@@ -27,12 +32,18 @@ const shopsQueries = {
       [namePatterns]
     );
     return shops.rows;
+  },
+  getFromId: async id => {
+    const shop = await pool.query(listQuery + " WHERE shop.id = $1", [id]);
+    if (shop.rowCount !== 1) throw "Id must be unique and valid";
+    else return shop.rows[0];
   }
 };
 
 /** DB STRING QUERIES */
 const listQuery = `
 SELECT
+  shop.id,
   shop.name,
   shop.category,
   shop.maxpremiums,

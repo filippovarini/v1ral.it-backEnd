@@ -59,4 +59,23 @@ router.get("/searchResult", checkShopSI, async (req, res) => {
   }
 });
 
+/* SHOP PROFILE */
+
+/**
+ * On Front-End, get /shopProfile/:id.
+ * Send request to /page/shopProfile/:id
+ */
+
+router.get("/shopProfile/:id", async (req, res) => {
+  try {
+    const shop = await shops.getFromId(req.params.id);
+    res.json({ success: true, shop });
+  } catch (e) {
+    console.log(e);
+    res
+      .status(500)
+      .json({ message: "Errore nel connetersi alle informazioni del negozio" });
+  }
+});
+
 module.exports = router;
