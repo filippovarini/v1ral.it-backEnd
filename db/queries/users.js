@@ -1,6 +1,7 @@
 const pool = require("../db");
 
 const userQueries = {
+  /** Get general user (pattern) */
   getByName: async username => {
     const pattern = `%${username}%`;
     const users = await pool.query(
@@ -8,6 +9,16 @@ const userQueries = {
       FROM "user"\
       WHERE LOWER(username) LIKE $1',
       [pattern]
+    );
+    return users.rows;
+  },
+  /** Get exact user */
+  getUnique: async username => {
+    const users = await pool.query(
+      'SELECT username, profileurl\
+      FROM "user"\
+      WHERE LOWER(username) LIKE $1',
+      [username]
     );
     return users.rows;
   },

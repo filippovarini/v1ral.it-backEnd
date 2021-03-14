@@ -1,7 +1,9 @@
 const pool = require("../db/db");
 
+/**
+ * Get user, by executing different queries on whether it is a shop or a user
+ */
 const getUser = async id => {
-  console.log(id);
   let parsedId = id.slice(1);
   let queryString = null;
   switch (id.slice(0, 1)) {

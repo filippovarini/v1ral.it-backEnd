@@ -108,4 +108,13 @@ router.post("/login", async (req, res) => {
   }
 });
 
+/**
+ * Save challenger id.
+ * Receive from frontend UNIQUE challenger username
+ */
+router.post("/challenger", (req, res) => {
+  req.session.challenger = req.body.challenger;
+  res.json({ success: true });
+});
+
 module.exports = router;

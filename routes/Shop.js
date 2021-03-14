@@ -2,6 +2,9 @@ const express = require("express");
 
 const router = express.Router();
 
+// middlewares
+const checkChallenger = require("../middlewares/CheckChallenger");
+
 /**
  * Update shopSI:
  * {[si to be updated]: text - null (deactivated)}
@@ -32,8 +35,16 @@ router.put("/updateSI", (req, res) => {
 });
 
 /**
- * Select shop to be premium in, by updating CART
+ * Select shop to be premium in, by updating cart.
+ * Checks that: has a challenger OR has a account already
+ * body: shopId
  */
-router.put("/updateCart");
+router.put("/updateCart", checkChallenger, (req, res) => {
+  // Already validated
+  cart = req.session.cart || [];
+  cart.push(req.body.shopId);
+  req.session.cart = cart;
+  res.json({ success: true });
+});
 
 module.exports = router;
