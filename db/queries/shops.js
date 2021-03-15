@@ -69,6 +69,39 @@ const shopsQueries = {
     ]);
     if (shops.rowCount !== ids.length) throw "Ids must be all unique and valid";
     return shops.rows;
+  },
+  register: async info => {
+    const query = await pool.query(
+      `
+      INSERT INTO shop(
+        "name",
+        category,
+        maxPremiums,
+        initialPrice,
+        currentPrice,
+        clicks,
+        bio,
+        email,
+        city,
+        province,
+        street,
+        postcode,
+        connectedId ,
+        backgroundURL,
+        logoURL,
+        psw)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      RETURNING id`,
+      info
+    );
+    return query.rows[0].id;
+  },
+  /** Increments view count by 1 */
+  viewed: async id => {
+    await pool.query("UPDATE shop SET clicks = clicks + 1 WHERE id = $1 ", [
+      id
+    ]);
+    return true;
   }
 };
 

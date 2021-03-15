@@ -90,18 +90,21 @@ router.post("/login", async (req, res) => {
       : 'SELECT * FROM "user" WHERE username = $1';
     const query = await pool.query(queryString, [login]);
     if (query.rowCount !== 0) {
-      const pswMatch = await bcrypt.compare(psw, query.rows[0].psw);
-      if (pswMatch) {
-        success = true;
-        req.session.loginId = `@${query.rows[0].username}`;
-        res.json({ success: true, user: query.rows[0] });
+      if (query.rowCount > 1) throw "Username or email must be unique";
+      else {
+        const pswMatch = await bcrypt.compare(psw, query.rows[0].psw);
+        if (pswMatch) {
+          success = true;
+          req.session.loginId = `@${query.rows[0].username}`;
+          res.json({ success: true, user: query.rows[0] });
+        }
       }
+      if (!success)
+        res.json({
+          success: false,
+          message: "Nessun utente con queste credenziali"
+        });
     }
-    if (!success)
-      res.json({
-        success: false,
-        message: "Nessun utente con queste credenziali"
-      });
   } catch (e) {
     console.log(e);
     res.status(500).json({ message: "Errore nel completamento del login" });
@@ -114,6 +117,14 @@ router.post("/login", async (req, res) => {
  */
 router.post("/challenger", (req, res) => {
   req.session.challenger = req.body.challenger;
+  res.json({ success: true });
+});
+
+/**
+ * Save user search identifier (userSI) to session
+ */
+router.put("/search", (req, res) => {
+  req.session.userSI = req.body.userSI;
   res.json({ success: true });
 });
 

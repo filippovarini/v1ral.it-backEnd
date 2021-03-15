@@ -64,10 +64,14 @@ router.get("/shops", checkShopSI, async (req, res) => {
 /**
  * On Front-End, get /shopProfile/:id.
  * Send request to /page/shopProfile/:id
+ * - updates view count of shop
  */
 router.get("/shopProfile/:id", async (req, res) => {
   try {
+    console.log("sending first");
     const shop = await shops.getFromId(req.params.id);
+    console.log("done first");
+    await shops.viewed(req.params.id);
     res.json({ success: true, shop });
   } catch (e) {
     console.log(e);
@@ -90,6 +94,37 @@ router.get("/checkout", checkCart, (req, res) => {
  */
 router.get("/success/:transactionId", checkTransactionId, async (req, res) => {
   res.json({ success: true, transactionId: req.params.transactionId });
+});
+
+/** User search results
+ * get username from query params.
+ */
+router.get("/users/:username", async (req, res) => {
+  try {
+    const userList = await users.getByName(req.params.username);
+    res.json({ success: true, users: userList });
+  } catch (e) {
+    console.log(e);
+    res
+      .status(500)
+      .json({ message: "Errore nel recupero delle informazioni sugli utenti" });
+  }
+});
+
+/** Send back single user info
+ * get  username from query params
+ */
+router.get("/user/:username", async (req, res) => {
+  try {
+    const user = await users.getUnique(req.params.username);
+    if (user.length !== 1) throw "Username must be unique and valid";
+    else res.json({ success: true, user: user });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      message: "Errore nel recupero delle informazioni sul profilo dell'utente"
+    });
+  }
 });
 
 module.exports = router;
