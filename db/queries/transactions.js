@@ -10,6 +10,15 @@ const transactionQueries = {
     );
     return newTrans.rows[0].id;
   },
+  getFromId: async transactionId => {
+    const transaction = await pool.query(
+      "SELECT id FROM transaction WHERE id = $1",
+      [transactionId]
+    );
+    if (transaction.rowCount !== 1)
+      throw "Transaction id must be unique and valid";
+    else return transaction.rows[0];
+  },
   /** Deletes transaction after unsuccess in that transaction processing */
   deleteTransaction: async transactionId => {
     await pool.query("DELETE FROM transaction WHERE id = $1", [transactionId]);

@@ -5,6 +5,7 @@ const router = express.Router();
 // middlewares
 const checkShopSI = require("../middlewares/CheckShopSI");
 const checkCart = require("../middlewares/CheckCart");
+const checkTransactionId = require("../middlewares/CheckTransactionId");
 
 // queries
 const cases = require("../db/queries/cases");
@@ -46,7 +47,7 @@ router.get("/home/users", async (req, res) => {
   }
 });
 
-/* SEARCH SHOP RESULT */
+/** Shop search results */
 router.get("/shops", checkShopSI, async (req, res) => {
   const { name, city, category } = req.session.shopSI;
   try {
@@ -60,13 +61,10 @@ router.get("/shops", checkShopSI, async (req, res) => {
   }
 });
 
-/* SHOP PROFILE */
-
 /**
  * On Front-End, get /shopProfile/:id.
  * Send request to /page/shopProfile/:id
  */
-
 router.get("/shopProfile/:id", async (req, res) => {
   try {
     const shop = await shops.getFromId(req.params.id);
@@ -84,6 +82,14 @@ router.get("/checkout", checkCart, (req, res) => {
   const shops = req.shops;
   req.shops = null; // free up req of unnecessary data
   res.json({ success: true, shops });
+});
+
+/** Checkout confirmation
+ * - validates transaction id
+ * - sends back authentication
+ */
+router.get("/success/:transactionId", checkTransactionId, async (req, res) => {
+  res.json({ success: true, transactionId: req.params.transactionId });
 });
 
 module.exports = router;
