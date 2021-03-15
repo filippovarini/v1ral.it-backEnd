@@ -9,6 +9,10 @@ const transactionQueries = {
       [amount, buyerId, new Date()]
     );
     return newTrans.rows[0].id;
+  },
+  /** Deletes transaction after unsuccess in that transaction processing */
+  deleteTransaction: async transactionId => {
+    await pool.query("DELETE FROM transaction WHERE id = $1", [transactionId]);
   }
 };
 

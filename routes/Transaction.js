@@ -9,6 +9,7 @@ const postUser = require("../middlewares/PostUser");
 // queries
 const transactionQueries = require("../db/queries/transactions");
 const premiumQueries = require("../db/queries/premiums");
+const userQueries = require("../db/queries/users");
 
 /**
  * Parses the checkout request by checking that the user is allowed for checkout
@@ -32,7 +33,10 @@ router.post(
         req.session.checkout.reduce((acc, shop) => (acc += shop.price), 0),
         userId
       );
-      await premiumQueries.insertFromIds(userId, req.session.checkout);
+      const premiums = await premiumQueries.insertFromIds(
+        userId,
+        req.session.checkout
+      );
       // remove all session data
       req.session.cart = null;
       req.session.checkout = null;
@@ -41,6 +45,12 @@ router.post(
       res.json({ success: true, transactionId });
     } catch (e) {
       console.log(e);
+      await transactionQueries.deleteTransaction(transactionId);
+      await premiumQueries.deletePremiums(premiums);
+      if (req.body.newUser) {
+        // just created new user
+        await userQueries.delete;
+      }
       res.status(500).json({
         message:
           "Errore nel salvataggio dei dati relativi alla transizione. " +

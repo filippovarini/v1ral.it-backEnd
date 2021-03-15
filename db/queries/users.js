@@ -53,6 +53,9 @@ const userQueries = {
       values
     );
     return newUser;
+  },
+  delete: async username => {
+    await pool.query('DELETE FROM "user" WHERE username = $1', [username]);
   }
 };
 

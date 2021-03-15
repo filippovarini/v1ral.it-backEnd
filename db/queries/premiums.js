@@ -13,10 +13,24 @@ const premiumQueries = {
           (i == 0 ? "" : ", ") + `(${shop.id}, '${userId}', ${shop.price})`)
     );
     const premiumsQuery = await pool.query(
-      `INSERT INTO premium VALUES ${values}`
+      `INSERT INTO premium VALUES ${values} RETURNING *`
     );
-    return true;
+    return premiumsQuery.rows;
+  },
+  /**
+   * Deletes all premiums
+   */
+  deletePremiums: async premiums => {
+    const shops = [];
+    premiums.forEach(premium => {
+      shops.push(premium.shop);
+    });
+    await pool.query(
+      `DELETE FROM premium
+       WHERE shop = ANY ($1)
+        AND "user" = $2`,
+      [shops, premiums[0].user]
+    );
   }
 };
-
 module.exports = premiumQueries;
