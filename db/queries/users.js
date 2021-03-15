@@ -17,7 +17,7 @@ const userQueries = {
     const users = await pool.query(
       'SELECT username, profileurl\
       FROM "user"\
-      WHERE LOWER(username) LIKE $1',
+      WHERE LOWER(username) = $1',
       [username]
     );
     return users.rows;

@@ -19,7 +19,4 @@ const premiumQueries = {
   }
 };
 
-premiumQueries.insertFromIds("sant.ippo", [
-  { id: 1, price: 44 },
-  { id: 3, price: 453 }
-]);
+module.exports = premiumQueries;

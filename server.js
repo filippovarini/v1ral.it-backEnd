@@ -8,6 +8,7 @@ const MongoDBSession = require("connect-mongodb-session")(session);
 const userRouter = require("./routes/User");
 const pageRouter = require("./routes/Page");
 const shopRouter = require("./routes/Shop");
+const transactionRouter = require("./routes/Transaction");
 
 const sessionSecret = require("./keys/dev").session;
 
@@ -49,6 +50,7 @@ app.use(
 app.use("/user", userRouter);
 app.use("/page", pageRouter);
 app.use("/shop", shopRouter);
+app.use("/transaction", transactionRouter);
 
 app.get("/error", (req, res) => {
   res.send("in server");
