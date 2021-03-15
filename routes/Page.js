@@ -4,6 +4,7 @@ const router = express.Router();
 
 // middlewares
 const checkShopSI = require("../middlewares/CheckShopSI");
+const checkCart = require("../middlewares/CheckCart");
 
 // queries
 const cases = require("../db/queries/cases");
@@ -46,7 +47,7 @@ router.get("/home/users", async (req, res) => {
 });
 
 /* SEARCH SHOP RESULT */
-router.get("/searchResult", checkShopSI, async (req, res) => {
+router.get("/shops", checkShopSI, async (req, res) => {
   const { name, city, category } = req.session.shopSI;
   try {
     const shopList = await shops.getFromSearch(name, city, category);
@@ -76,6 +77,13 @@ router.get("/shopProfile/:id", async (req, res) => {
       .status(500)
       .json({ message: "Errore nel connetersi alle informazioni del negozio" });
   }
+});
+
+/* Checkout info */
+router.get("/checkout", checkCart, (req, res) => {
+  const shops = req.shops;
+  req.shops = null; // free up req of unnecessary data
+  res.json({ success: true, shops });
 });
 
 module.exports = router;

@@ -58,6 +58,10 @@ app.get("/", (req, res) => {
   res.sendFile(path.resolve(__dirname, "client", "index.html"));
 });
 
+app.get("/session", (req, res) => {
+  res.json({ session: req.session });
+});
+
 app.use("*", (req, res) => {
   res.send("404 - page not found");
 });

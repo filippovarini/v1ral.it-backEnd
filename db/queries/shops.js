@@ -1,5 +1,30 @@
 const pool = require("../db");
 
+/** DB STRING QUERIES */
+const listQuery = `
+SELECT
+  shop.id,
+  shop.name,
+  shop.category,
+  shop.maxpremiums,
+  shop.currentprice,
+  shop.city,
+  shop.logourl,
+  COALESCE(goalsDone.perc, 0) AS goalsDone,
+  COALESCE(goalsDone.premiums, 0) AS premiums
+FROM
+  shop LEFT JOIN 
+  (SELECT goals.shop, 
+          SUM(premium.price) / CAST(goals.total AS FLOAT) AS perc, 
+          COUNT(*) AS premiums
+   FROM premium NATURAL JOIN 
+        (SELECT shop, SUM(amount) AS total
+         FROM goal
+         GROUP BY shop
+        ) AS goals
+  GROUP BY goals.shop, goals.total) AS goalsDone
+ON shop.id = goalsDone.shop`;
+
 /**
  * Shop Queries
  * !! AT the moment NOT OPTIMIZED
@@ -37,32 +62,14 @@ const shopsQueries = {
     const shop = await pool.query(listQuery + " WHERE shop.id = $1", [id]);
     if (shop.rowCount !== 1) throw "Id must be unique and valid";
     else return shop.rows[0];
+  },
+  getFromIds: async ids => {
+    const shops = await pool.query(listQuery + " WHERE shop.id = ANY ($1)", [
+      ids
+    ]);
+    if (shops.rowCount !== ids.length) throw "Ids must be all unique and valid";
+    return shops.rows;
   }
 };
-
-/** DB STRING QUERIES */
-const listQuery = `
-SELECT
-  shop.id,
-  shop.name,
-  shop.category,
-  shop.maxpremiums,
-  shop.currentprice,
-  shop.city,
-  shop.logourl,
-  COALESCE(goalsDone.perc, 0) AS goalsDone,
-  COALESCE(goalsDone.premiums, 0) AS premiums
-FROM
-  shop LEFT JOIN 
-  (SELECT goals.shop, 
-          SUM(premium.price) / CAST(goals.total AS FLOAT) AS perc, 
-          COUNT(*) AS premiums
-   FROM premium NATURAL JOIN 
-        (SELECT shop, SUM(amount) AS total
-         FROM goal
-         GROUP BY shop
-        ) AS goals
-  GROUP BY goals.shop, goals.total) AS goalsDone
-ON shop.id = goalsDone.shop`;
 
 module.exports = shopsQueries;
