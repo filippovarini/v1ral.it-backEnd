@@ -2,6 +2,10 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const pool = require("../db/db");
 
+// middlewares
+const checkAuth = require("../middlewares/CheckAuth");
+const checkUpdatable = require("../middlewares/CheckUpdatable");
+
 // db queries
 const userQueries = require("../db/queries/users");
 
@@ -126,6 +130,32 @@ router.post("/challenger", (req, res) => {
 router.put("/search", (req, res) => {
   req.session.userSI = req.body.userSI;
   res.json({ success: true });
+});
+
+/** Updates user info
+ * Doesn't checkAuth as to click button you need to have checked it
+ * @todo use a safer middleware to handle requests not from browser
+ * @param update object with values to edit
+ */
+router.put("/updateInfo", checkAuth, checkUpdatable, async (req, res) => {
+  try {
+    if (req.session.loginId[0] !== "@")
+      throw `LoginId prefix should be @ but is ${req.session.loginId[0]}`;
+    else {
+      // await user
+      const user = await userQueries.update(
+        req.session.loginId.slice(1),
+        req.body.update
+      );
+      res.json({ success: true, user });
+    }
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      success: false,
+      message: "Errore nel salvataggio delle modifiche. Prova a riprovare"
+    });
+  }
 });
 
 module.exports = router;

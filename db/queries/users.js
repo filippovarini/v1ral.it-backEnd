@@ -54,6 +54,22 @@ const userQueries = {
     );
     return newUser;
   },
+  update: async (username, newInfo) => {
+    let setters = "";
+    Object.keys(newInfo).forEach(
+      (key, i) => (setters += (i == 0 ? "" : ", ") + `${key} = \$${i + 1}`)
+    );
+    const updatedInfo = await pool.query(
+      `
+    UPDATE "user"
+    SET ${setters}
+    WHERE username = '${username}'
+    RETURNING *`,
+      Object.values(newInfo)
+    );
+    if (updatedInfo.rowCount !== 1) throw "Username is not unique or valid";
+    else return updatedInfo.rows[0];
+  },
   delete: async username => {
     await pool.query('DELETE FROM "user" WHERE username = $1', [username]);
   }

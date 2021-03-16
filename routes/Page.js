@@ -6,6 +6,7 @@ const router = express.Router();
 const checkShopSI = require("../middlewares/CheckShopSI");
 const checkCart = require("../middlewares/CheckCart");
 const checkTransactionId = require("../middlewares/CheckTransactionId");
+const checkAuth = require("../middlewares/CheckAuth");
 
 // queries
 const cases = require("../db/queries/cases");
@@ -124,6 +125,49 @@ router.get("/user/:username", async (req, res) => {
     res.status(500).json({
       message: "Errore nel recupero delle informazioni sul profilo dell'utente"
     });
+  }
+});
+
+/* DASHBOARDS */
+
+/** USED FOR DASHBOARD AND SETTINGS
+ * Checks if there is a valid loginId
+ * Fetches user info
+ */
+router.get("/dashboard/user", checkAuth, async (req, res) => {
+  try {
+    if (req.session.loginId[0] !== "@")
+      throw `LoginId prefix should be @ but is ${req.session.loginId[0]}`;
+    else {
+      const user = await users.getUnique(req.session.loginId.slice(1));
+      if (user.length !== 1) throw "Username not unique or valid";
+      else res.json({ success: true, user: user[0] });
+    }
+  } catch (e) {
+    console.log(e);
+    res
+      .status(500)
+      .json({ success: false, message: "Username non valido o non unico" });
+  }
+});
+
+/** USED FOR DASHBOARD AND SETTINGS
+ * Checks if there is a valid loginId
+ * Fetches shop info
+ */
+router.get("/dashboard/shop", checkAuth, async (req, res) => {
+  try {
+    if (req.session.loginId[0] !== "#")
+      throw `LoginId prefix should be # but is ${req.session.loginId[0]}`;
+    else {
+      const shop = await shops.getFromId(req.session.loginId.slice(1));
+      res.json({ success: true, shop });
+    }
+  } catch (e) {
+    console.log(e);
+    res
+      .status(500)
+      .json({ success: false, message: "Shop ID non valido o non unico" });
   }
 });
 

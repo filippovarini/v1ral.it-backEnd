@@ -64,6 +64,11 @@ app.get("/session", (req, res) => {
   res.json({ session: req.session });
 });
 
+app.put("/logout", async (req, res) => {
+  await req.session.destroy();
+  res.json({ success: true });
+});
+
 app.use("*", (req, res) => {
   res.send("404 - page not found");
 });
