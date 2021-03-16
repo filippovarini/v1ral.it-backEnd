@@ -158,4 +158,35 @@ router.put("/updateInfo", checkAuth, checkUpdatable, async (req, res) => {
   }
 });
 
+router.put("/updatePsw", checkAuth, async (req, res) => {
+  try {
+    if (req.session.loginId[0] !== "@")
+      throw `LoginId prefix should be @ but is ${req.session.loginId[0]}`;
+    else {
+      const { oldPsw, newPsw } = req.body;
+      const dbPsw = await userQueries.getOldPsw(req.session.loginId.slice(1));
+      const pswMatch = await bcrypt.compare(oldPsw, dbPsw);
+      if (pswMatch) {
+        const hashed = await bcrypt.hash(newPsw, 10);
+        const user = await userQueries.update(req.session.loginId.slice(1), {
+          psw: hashed
+        });
+        res.json({
+          success: true,
+          message: "Password aggiornata correttamente",
+          user
+        });
+      } else {
+        res.json({ success: false, message: "Vecchia password non corretta" });
+      }
+    }
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      message:
+        "Errore nel salvataggio delle modifiche. Ti consigliamo di riprovare"
+    });
+  }
+});
+
 module.exports = router;

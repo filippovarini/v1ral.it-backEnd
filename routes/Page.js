@@ -118,8 +118,7 @@ router.get("/users/:username", async (req, res) => {
 router.get("/user/:username", async (req, res) => {
   try {
     const user = await users.getUnique(req.params.username);
-    if (user.length !== 1) throw "Username must be unique and valid";
-    else res.json({ success: true, user: user });
+    res.json({ success: true, user: user });
   } catch (e) {
     console.log(e);
     res.status(500).json({
@@ -140,8 +139,7 @@ router.get("/dashboard/user", checkAuth, async (req, res) => {
       throw `LoginId prefix should be @ but is ${req.session.loginId[0]}`;
     else {
       const user = await users.getUnique(req.session.loginId.slice(1));
-      if (user.length !== 1) throw "Username not unique or valid";
-      else res.json({ success: true, user: user[0] });
+      res.json({ success: true, user: user[0] });
     }
   } catch (e) {
     console.log(e);

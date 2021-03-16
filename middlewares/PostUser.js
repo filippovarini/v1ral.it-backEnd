@@ -9,11 +9,13 @@ const userQueries = require("../db/queries/users");
 const postUser = async (req, res, next) => {
   if (!req.body.newUser) {
     if (req.session.loginId) {
-      const user = await userQueries.getUnique(req.session.loginId.slice(1));
-      if (user.length !== 1) {
-        console.log("Username is not unique or valid");
+      try {
+        const user = await userQueries.getUnique(req.session.loginId.slice(1));
+        next();
+      } catch (e) {
+        console.log(e);
         res.status(500).json({ message: "Username non è unico" });
-      } else next(); // user logged in
+      }
     } else {
       // not authenticated
       res.status(401).json({

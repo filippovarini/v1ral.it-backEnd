@@ -20,7 +20,24 @@ const userQueries = {
       WHERE LOWER(username) = $1',
       [username]
     );
-    return users.rows;
+    if (users.rowCount !== 1)
+      throw `Username is not unique nor valid. Instead of 1, got ${users.rowCount} users`;
+    else {
+      return users.rows;
+    }
+  },
+  getOldPsw: async username => {
+    const users = await pool.query(
+      'SELECT psw\
+      FROM "user"\
+      WHERE LOWER(username) = $1',
+      [username]
+    );
+    if (users.rowCount !== 1)
+      throw `Username is not unique nor valid. Instead of 1, got ${users.rowCount} users`;
+    else {
+      return users.rows[0].psw;
+    }
   },
   getList: async () => {
     const users = await pool.query(
