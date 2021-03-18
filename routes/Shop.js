@@ -6,6 +6,8 @@ const router = express.Router();
 
 // middlewares
 const checkChallenger = require("../middlewares/CheckChallenger");
+const checkAuth = require("../middlewares/CheckAuth");
+const checkUpdatable = require("../middlewares/CheckUpdatable");
 
 // db queries
 const shopQueries = require("../db/queries/shops");
@@ -134,6 +136,63 @@ router.put("/updateCart", checkChallenger, (req, res) => {
   cart.push(req.body.shopId);
   req.session.cart = cart;
   res.json({ success: true });
+});
+
+/** Updates user info
+ * Doesn't checkAuth as to click button you need to have checked it
+ * @todo use a safer middleware to handle requests not from browser
+ * @param update object with values to edit
+ */
+router.put("/updateInfo", checkAuth, checkUpdatable, async (req, res) => {
+  try {
+    if (req.session.loginId[0] !== "#")
+      throw `LoginId prefix should be # but is ${req.session.loginId[0]}`;
+    else {
+      // await user
+      const shop = await shopQueries.update(
+        req.session.loginId.slice(1),
+        req.body.update
+      );
+      res.json({ success: true, shop });
+    }
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      success: false,
+      message: "Errore nel salvataggio delle modifiche. Prova a riprovare"
+    });
+  }
+});
+
+router.put("/updatePsw", checkAuth, async (req, res) => {
+  try {
+    if (req.session.loginId[0] !== "#")
+      throw `LoginId prefix should be # but is ${req.session.loginId[0]}`;
+    else {
+      const { oldPsw, newPsw } = req.body;
+      const dbPsw = await shopQueries.getOldPsw(req.session.loginId.slice(1));
+      const pswMatch = await bcrypt.compare(oldPsw, dbPsw);
+      if (pswMatch) {
+        const hashed = await bcrypt.hash(newPsw, 10);
+        const shop = await shopQueries.update(req.session.loginId.slice(1), {
+          psw: hashed
+        });
+        res.json({
+          success: true,
+          message: "Password aggiornata correttamente",
+          shop
+        });
+      } else {
+        res.json({ success: false, message: "Vecchia password non corretta" });
+      }
+    }
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      message:
+        "Errore nel salvataggio delle modifiche. Ti consigliamo di riprovare"
+    });
+  }
 });
 
 module.exports = router;

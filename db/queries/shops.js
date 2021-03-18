@@ -63,6 +63,19 @@ const shopsQueries = {
     if (shop.rowCount !== 1) throw "Id must be unique and valid";
     else return shop.rows[0];
   },
+  getOldPsw: async id => {
+    const shops = await pool.query(
+      "SELECT psw\
+      FROM shop\
+      WHERE id = $1",
+      [id]
+    );
+    if (shops.rowCount !== 1)
+      throw `Username is not unique nor valid. Instead of 1, got ${shops.rowCount} users`;
+    else {
+      return shops.rows[0].psw;
+    }
+  },
   getFromIds: async ids => {
     const shops = await pool.query(listQuery + " WHERE shop.id = ANY ($1)", [
       ids
@@ -102,6 +115,22 @@ const shopsQueries = {
       id
     ]);
     return true;
+  },
+  update: async (id, newInfo) => {
+    let setters = "";
+    Object.keys(newInfo).forEach(
+      (key, i) => (setters += (i == 0 ? "" : ", ") + `${key} = \$${i + 1}`)
+    );
+    const updatedInfo = await pool.query(
+      `
+    UPDATE shop
+    SET ${setters}
+    WHERE id = ${id}
+    RETURNING *`,
+      Object.values(newInfo)
+    );
+    if (updatedInfo.rowCount !== 1) throw "Username is not unique or valid";
+    else return updatedInfo.rows[0];
   }
 };
 
