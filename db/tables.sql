@@ -47,6 +47,7 @@ CREATE TABLE "service"
     shop SERIAL NOT NULL,
     name VARCHAR(64) NOT NULL,
     image VARCHAR(512) NOT NULL,
+    type VARCHAR(16) NOT NULL,
     PRIMARY KEY (shop, name)
 );
 

@@ -45,13 +45,13 @@ const userQueries = {
             FROM "user" LEFT JOIN ((SELECT challenger, COUNT(*) AS rt \
                                    FROM "user" \
                                    GROUP BY challenger) AS challenge \
-                                   JOIN \
+                                   FULL OUTER JOIN \
                                    (SELECT "user", COUNT(*) AS number \
                                     FROM premium \
                                     GROUP BY "user") AS premiums\
                                     ON premiums."user" = challenge.challenger)\
                                     AS data\
-                ON "user".username = data."user"'
+                ON "user".username = COALESCE(data."user", data.challenger)'
     );
     return users.rows;
   },

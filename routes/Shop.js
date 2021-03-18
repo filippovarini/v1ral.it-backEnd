@@ -12,6 +12,20 @@ const checkUpdatable = require("../middlewares/CheckUpdatable");
 // db queries
 const shopQueries = require("../db/queries/shops");
 
+// gets list of cities
+router.get("/cities", async (req, res) => {
+  try {
+    const cities = await shopQueries.getCities();
+    res.json({ success: true, cities });
+  } catch (e) {
+    console.log(e);
+    res.json({
+      success: false,
+      message: "Errore nel recuperare la lista delle città"
+    });
+  }
+});
+
 /** Register shop */
 router.post("/register", async (req, res) => {
   const {

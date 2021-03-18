@@ -119,9 +119,19 @@ router.post("/login", async (req, res) => {
  * Save challenger id.
  * Receive from frontend UNIQUE challenger username
  */
-router.post("/challenger", (req, res) => {
-  req.session.challenger = req.body.challenger;
-  res.json({ success: true });
+router.post("/challenger", async (req, res) => {
+  try {
+    // check exists unique
+    await userQueries.getUnique(req.body.challenger);
+    req.session.challenger = req.body.challenger;
+    res.json({ success: true });
+  } catch (e) {
+    console.log(e);
+    res.json({
+      success: false,
+      message: "Errore nel connettere la sessione con lo sfidante selezionato"
+    });
+  }
 });
 
 /**

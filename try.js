@@ -1,2 +1,3 @@
-const shit = { a: 1, b: 32 };
-Object.entries(shit).map(entry => console.log(entry[0]));
+const [a, b] = [1, 2];
+console.log(a);
+console.log(b);

@@ -9,7 +9,10 @@ SELECT
   shop.maxpremiums,
   shop.currentprice,
   shop.city,
+  shop.province,
   shop.logourl,
+  shop.bio,
+  shop.backgroundurl,
   COALESCE(goalsDone.perc, 0) AS goalsDone,
   COALESCE(goalsDone.premiums, 0) AS premiums
 FROM
@@ -35,7 +38,10 @@ const shopsQueries = {
     const shops = await pool.query(listQuery);
     return shops.rows;
   },
-
+  getCities: async () => {
+    const cities = await pool.query("SELECT DISTINCT city FROM shop");
+    return cities.rows.map(row => row.city);
+  },
   /**
    * Get shops by name inserted. Using patterns to get flexible search
    */

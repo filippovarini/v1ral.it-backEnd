@@ -3,7 +3,6 @@ const express = require("express");
 const router = express.Router();
 
 // middlewares
-const checkShopSI = require("../middlewares/CheckShopSI");
 const checkCart = require("../middlewares/CheckCart");
 const checkTransactionId = require("../middlewares/CheckTransactionId");
 const checkAuth = require("../middlewares/CheckAuth");
@@ -21,44 +20,57 @@ router.get("/home/quickFacts", async (req, res) => {
     const totalCases = await cases.total();
     const dailyCases = await cases.daily();
     const financedShops = await cases.financedShops();
-    res.json({ rtIndex, totalCases, dailyCases, financedShops });
+    res.json({
+      success: true,
+      info: { rtIndex, totalCases, dailyCases, financedShops }
+    });
   } catch (e) {
     console.log(e);
-    res.status(500).json({ message: "Errore nella richiesta di dati" });
+    res
+      .status(500)
+      .json({ success: false, message: "Errore nella richiesta di dati" });
   }
 });
 
 router.get("/home/shops", async (req, res) => {
   try {
     const shopList = await shops.getList();
-    res.json({ shopList });
+    res.json({ success: true, shopList });
   } catch (e) {
     console.log(e);
-    res.status(500).json({ message: "Errore nella richiesta di dati" });
+    res
+      .status(500)
+      .json({ success: false, message: "Errore nella richiesta di dati" });
   }
 });
 
 router.get("/home/users", async (req, res) => {
   try {
     const userList = await users.getList();
-    res.json({ userList });
-  } catch (e) {
-    console.log(e);
-    res.status(500).json({ message: "Errore nella richiesta di dati" });
-  }
-});
-
-/** Shop search results */
-router.get("/shops", checkShopSI, async (req, res) => {
-  const { name, city, category } = req.session.shopSI;
-  try {
-    const shopList = await shops.getFromSearch(name, city, category);
-    res.json({ success: true, shops: shopList });
+    res.json({ success: true, userList });
   } catch (e) {
     console.log(e);
     res
       .status(500)
-      .json({ message: "Errore nella ricerca delle imprese nel database" });
+      .json({ success: false, message: "Errore nella richiesta di dati" });
+  }
+});
+
+/** Shop search results */
+/** Accessible even without any search identifier */
+router.get("/shops", async (req, res) => {
+  try {
+    if (req.session.shopSI) {
+      const { name, city, category } = req.session.shopSI;
+      shopList = await shops.getFromSearch(name, city, category);
+    } else shopList = await shops.getList();
+    res.json({ success: true, shops: shopList });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      success: false,
+      message: "Errore nella ricerca delle imprese nel database"
+    });
   }
 });
 
@@ -78,7 +90,10 @@ router.get("/shopProfile/:id", async (req, res) => {
     console.log(e);
     res
       .status(500)
-      .json({ message: "Errore nel connetersi alle informazioni del negozio" });
+      .json({
+        success: false,
+        message: "Errore nel connetersi alle informazioni del negozio"
+      });
   }
 });
 
