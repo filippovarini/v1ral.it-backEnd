@@ -27,9 +27,7 @@ router.get("/header", checkAuth, async (req, res) => {
         break;
       }
       case "#": {
-        const shop = await shops.getShortInfoFromId(
-          req.session.loginId.slice(1)
-        );
+        const shop = await shops.getProfile(req.session.loginId.slice(1));
         res.json({
           success: true,
           name: "#" + shop[0].name,
@@ -132,7 +130,7 @@ router.get("/shops", async (req, res) => {
  */
 router.get("/shopProfile/:id", async (req, res) => {
   try {
-    const shop = await shops.getFromId(req.params.id);
+    const shop = await shops.getProfileInfo(req.params.id);
     await shops.viewed(req.params.id);
     res.json({
       success: true,
@@ -236,7 +234,7 @@ router.get("/dashboard/shop", checkAuth, async (req, res) => {
     if (req.session.loginId[0] !== "#")
       throw `LoginId prefix should be # but is ${req.session.loginId[0]}`;
     else {
-      const shop = await shops.getFromId(req.session.loginId.slice(1));
+      const shop = await shops.getProfileInfo(req.session.loginId.slice(1));
       res.json({ success: true, shop });
     }
   } catch (e) {

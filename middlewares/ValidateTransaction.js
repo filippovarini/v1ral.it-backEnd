@@ -20,7 +20,7 @@ const validateChallengerTransaction = async (req, res, next) => {
         throw "I negozi selezionati sono già stati comprati dallo stesso utente";
 
       // success. Create checkout session
-      const shops = await shopQueries.getFromIds(req.session.cart);
+      const shops = await shopQueries.getPriceFromIds(req.session.cart);
       const checkout = shops.map(shop => {
         return { id: shop.id, price: shop.currentprice };
       });
