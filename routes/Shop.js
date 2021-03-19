@@ -70,7 +70,11 @@ router.post("/register", async (req, res) => {
     res.json({ success: true, shopUser: newShopUser });
   } catch (e) {
     console.log(e);
-    res.status(500).json({ message: "Errore nella registrazione del negozio" });
+    res.status(500).json({
+      success: false,
+      serverError: true,
+      message: "Errore nella registrazione del negozio"
+    });
   }
 });
 
@@ -106,7 +110,11 @@ router.post("/login", async (req, res) => {
       });
   } catch (e) {
     console.log(e);
-    res.status(500).json({ message: "Errore nel completamento del login" });
+    res.status(500).json({
+      success: false,
+      serverError: true,
+      message: "Errore nel completamento del login"
+    });
   }
 });
 
@@ -135,7 +143,9 @@ router.put("/updateSI", (req, res) => {
     res.json({ success: true, a: req.session.shopSI });
   } catch (e) {
     console.log(e);
-    res.status(500).json({ message: "Errore interno" });
+    res
+      .status(500)
+      .json({ success: false, serverError: true, message: "Errore interno" });
   }
 });
 
@@ -150,6 +160,23 @@ router.put("/updateCart", checkChallenger, (req, res) => {
   cart.push(req.body.shopId);
   req.session.cart = cart;
   res.json({ success: true });
+});
+
+/** Removes from cart
+ * @param shopId Id of the shop to be removed from cart
+ */
+router.put("/removeFromCart", (req, res) => {
+  if (!req.session.cart)
+    res.json({
+      success: false,
+      message: "Nessun carrello salvato nella sessione"
+    });
+  else {
+    req.session.cart = req.session.cart.filter(
+      shopId => shopId != req.body.shopId
+    );
+    res.json({ success: true });
+  }
 });
 
 /** Updates user info
@@ -173,6 +200,7 @@ router.put("/updateInfo", checkAuth, checkUpdatable, async (req, res) => {
     console.log(e);
     res.status(500).json({
       success: false,
+      serverError: true,
       message: "Errore nel salvataggio delle modifiche. Prova a riprovare"
     });
   }
@@ -203,6 +231,8 @@ router.put("/updatePsw", checkAuth, async (req, res) => {
   } catch (e) {
     console.log(e);
     res.status(500).json({
+      success: false,
+      serverError: true,
       message:
         "Errore nel salvataggio delle modifiche. Ti consigliamo di riprovare"
     });

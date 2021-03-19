@@ -64,6 +64,14 @@ const shopsQueries = {
     );
     return shops.rows;
   },
+  getShortInfoFromId: async id => {
+    const shop = await pool.query(
+      "SELECT name, logourl FROM shop WHERE id = $1",
+      [id]
+    );
+    if (shop.rowCount !== 1) throw "Id must be unique and valid";
+    else return shop.rows;
+  },
   getFromId: async id => {
     const shop = await pool.query(listQuery + " WHERE shop.id = $1", [id]);
     if (shop.rowCount !== 1) throw "Id must be unique and valid";

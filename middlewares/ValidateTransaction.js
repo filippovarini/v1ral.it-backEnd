@@ -1,4 +1,5 @@
 const shopQueries = require("../db/queries/shops");
+const premiumQueries = require("../db/queries/premiums");
 
 /** Validates challenger transaction by:
  * - checking that the cart is not empty
@@ -7,20 +8,30 @@ const shopQueries = require("../db/queries/shops");
  */
 const validateChallengerTransaction = async (req, res, next) => {
   try {
-    if (req.session.cart && req.session.cart.length !== 0) {
-      // create checkout session
+    if (!req.session.cart || req.session.cart.length === 0)
+      res.status(401).json({ success: false, message: "Carrello vuoto" });
+    else {
+      // check not already bought
+      const alreadyBought = await premiumQueries.alreadyBought(
+        req.session.loginId.slice(1),
+        req.session.cart
+      );
+      if (req.session.loginId && alreadyBought)
+        throw "I negozi selezionati sono già stati comprati dallo stesso utente";
+
+      // success. Create checkout session
       const shops = await shopQueries.getFromIds(req.session.cart);
       const checkout = shops.map(shop => {
         return { id: shop.id, price: shop.currentprice };
       });
       req.session.checkout = checkout;
       next();
-    } else {
-      res.status(401).json({ message: "Carrello vuoto" });
     }
   } catch (e) {
     console.log(e);
     res.status(500).json({
+      success: false,
+      serverError: true,
       message: "Errore nell'recupero delle informazioni del carrello"
     });
   }

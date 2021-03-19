@@ -24,6 +24,8 @@ router.get("/usernameCheck/:username", async (req, res) => {
   } catch (e) {
     console.log(e);
     res.status(500).json({
+      success: false,
+      serverError: true,
       message: "Errore nel controllare l'originalità dell'username"
     });
   }
@@ -40,6 +42,8 @@ router.get("/name/:username", async (req, res) => {
   } catch (e) {
     console.log(e);
     res.status(500).json({
+      success: false,
+      serverError: true,
       message: "Errore nella ricerca di profili con l'username da te inserito"
     });
   }
@@ -79,18 +83,19 @@ router.post("/register", async (req, res) => {
     req.session.loginId = `@${newUser.rows[0].username}`;
     res.json({ user: newUser.rows[0], success: true });
   } catch (e) {
-    res.status(500).json({ message: "Errore nella registrazione dell'utente" });
+    res.status(500).json({
+      success: false,
+      serverError: true,
+      message: "Errore nella registrazione dell'utente"
+    });
     console.log(e);
   }
 });
 
 /* logs user in: 1. check username exists 2. compare passwords */
 router.post("/login", async (req, res) => {
-  console.log("got");
   try {
     const { login, psw } = req.body;
-    console.log(login);
-    console.log(psw);
     const queryString = isEmail(login)
       ? 'SELECT * FROM "user" WHERE email = $1'
       : 'SELECT * FROM "user" WHERE username = $1';
@@ -113,13 +118,11 @@ router.post("/login", async (req, res) => {
     } else res.json({ success: false, message: "Username non valido" });
   } catch (e) {
     console.log(e);
-    res
-      .status(500)
-      .json({
-        success: false,
-        serverError: true,
-        message: "Errore nel completamento del login"
-      });
+    res.status(500).json({
+      success: false,
+      serverError: true,
+      message: "Errore nel completamento del login"
+    });
   }
 });
 
@@ -171,6 +174,7 @@ router.put("/updateInfo", checkAuth, checkUpdatable, async (req, res) => {
     console.log(e);
     res.status(500).json({
       success: false,
+      serverError: true,
       message: "Errore nel salvataggio delle modifiche. Prova a riprovare"
     });
   }
@@ -201,6 +205,8 @@ router.put("/updatePsw", checkAuth, async (req, res) => {
   } catch (e) {
     console.log(e);
     res.status(500).json({
+      success: false,
+      serverError: true,
       message:
         "Errore nel salvataggio delle modifiche. Ti consigliamo di riprovare"
     });

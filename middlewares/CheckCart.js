@@ -18,6 +18,8 @@ const checkCart = async (req, res, next) => {
   } catch (e) {
     console.log(e);
     res.status(500).json({
+      success: false,
+      serverError: true,
       message:
         "Errore nel recuperare le informazioni dei focolai da te selezionati"
     });

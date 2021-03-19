@@ -5,12 +5,13 @@ const premiumQueries = {
    * Insert multiple rows after checkout
    * @param shops contains {id, price}
    */
-  insertFromIds: async (userId, shops) => {
+  insertFromIds: async (userId, transactionId, shops) => {
     let values = "";
     shops.forEach(
       (shop, i) =>
         (values +=
-          (i == 0 ? "" : ", ") + `(${shop.id}, '${userId}', ${shop.price})`)
+          (i == 0 ? "" : ", ") +
+          `(${shop.id}, '${userId}', ${shop.price}, ${transactionId})`)
     );
     const premiumsQuery = await pool.query(
       `INSERT INTO premium VALUES ${values} RETURNING *`
@@ -31,6 +32,21 @@ const premiumQueries = {
         AND "user" = $2`,
       [shops, premiums[0].user]
     );
+  },
+  /** Checks the shops the user is getting premium in have not already been
+   * purchased by the same user, hence violating the uniqueness of primary key
+   * */
+  alreadyBought: async (userId, shopIds) => {
+    const alreadyPremium = await pool.query(
+      `
+    SELECT * 
+    FROM premium 
+    WHERE "user" = $1
+    AND shop = ANY ($2)`,
+      [userId, shopIds]
+    );
+    return alreadyPremium.rowCount !== 0;
   }
 };
+
 module.exports = premiumQueries;

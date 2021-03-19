@@ -33,8 +33,9 @@ router.post(
         req.session.checkout.reduce((acc, shop) => (acc += shop.price), 0),
         userId
       );
-      const premiums = await premiumQueries.insertFromIds(
+      await premiumQueries.insertFromIds(
         userId,
+        transactionId,
         req.session.checkout
       );
       // remove all session data
@@ -52,6 +53,8 @@ router.post(
         await userQueries.delete;
       }
       res.status(500).json({
+        success: false,
+        serverError: true,
         message:
           "Errore nel salvataggio dei dati relativi alla transizione. " +
           "Abbiamo dovuto resettare i dati. Ti consigliamo di riprovare. " +

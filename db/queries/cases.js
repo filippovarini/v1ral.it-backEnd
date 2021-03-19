@@ -25,9 +25,7 @@ const casesQueries = {
   },
   financedShops: async () => {
     const financedShops = await pool.query(
-      "SELECT CAST(COUNT(DISTINCT shop.id) AS INT) AS number\
-            FROM premium JOIN shop\
-               ON premium.shop = shop.id "
+      "SELECT CAST(COUNT(DISTINCT shop) AS INT) AS number FROM premium"
     );
     return financedShops.rows[0].number;
   },
@@ -35,7 +33,11 @@ const casesQueries = {
     const now = new Date();
     const date = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
     const cases = await pool.query(
-      "SELECT id FROM transaction WHERE date >= $1 AND type = 'challenger'",
+      `
+      SELECT * 
+      FROM premium JOIN transaction
+      ON premium.transactionId = transaction.id
+      WHERE transaction.date >= $1`,
       [date]
     );
     return cases.rowCount;

@@ -68,7 +68,13 @@ const checkChallenger = async (req, res, next) => {
     }
   } catch (e) {
     console.log(e);
-    res.status(500).json({ message: "Errore nell'autenticazione dell'utente" });
+    res
+      .status(500)
+      .json({
+        success: false,
+        serverError: true,
+        message: "Errore nell'autenticazione dell'utente"
+      });
   }
 };
 

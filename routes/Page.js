@@ -1,5 +1,4 @@
 const express = require("express");
-const pool = require("../db/db");
 
 const router = express.Router();
 
@@ -14,22 +13,33 @@ const cases = require("../db/queries/cases");
 const shops = require("../db/queries/shops");
 const users = require("../db/queries/users");
 
+/** Gets name and profile for header */
 router.get("/header", checkAuth, async (req, res) => {
   try {
-    if (req.session.loginId[0] === "@") {
-      const query = await pool.query(
-        'SELECT profileurl FROM "user" WHERE username = $1',
-        [req.session.loginId.slice(1)]
-      );
-      if (query.rowCount !== 1) throw "Username should be unique";
-      else res.json({ success: true, userProfile: query.rows[0].profileurl });
-    } else if (req.session.loginId[0] === "#") {
-      const query = await pool.query("SELECT logourl FROM shop WHERE id = $1", [
-        req.session.loginId.slice(1)
-      ]);
-      if (query.rowCount !== 1) throw "Shop Id should be unique";
-      else res.json({ success: true, userProfile: query.rows[0].logourl });
-    } else throw "Username prefix is invalid. Got " + req.session.loginId[0];
+    switch (req.session.loginId[0]) {
+      case "@": {
+        const user = await users.getUnique(req.session.loginId.slice(1));
+        res.json({
+          success: true,
+          name: "@" + user[0].username,
+          userProfile: user[0].profileurl
+        });
+        break;
+      }
+      case "#": {
+        const shop = await shops.getShortInfoFromId(
+          req.session.loginId.slice(1)
+        );
+        res.json({
+          success: true,
+          name: "#" + shop[0].name,
+          userProfile: shop[0].logourl
+        });
+        break;
+      }
+      default:
+        throw "Username prefix is invalid. Got " + req.session.loginId[0];
+    }
   } catch (e) {
     console.log(e);
     res.json({
@@ -47,15 +57,24 @@ router.get("/home/quickFacts", async (req, res) => {
     const totalCases = await cases.total();
     const dailyCases = await cases.daily();
     const financedShops = await cases.financedShops();
+    const dailyFinancedShops = await cases.dailyFinancedShops();
     res.json({
       success: true,
-      info: { rtIndex, totalCases, dailyCases, financedShops }
+      info: {
+        rtIndex,
+        totalCases,
+        dailyCases,
+        financedShops,
+        dailyFinancedShops
+      }
     });
   } catch (e) {
     console.log(e);
-    res
-      .status(500)
-      .json({ success: false, message: "Errore nella richiesta di dati" });
+    res.status(500).json({
+      success: false,
+      serverError: true,
+      message: "Errore nella richiesta di dati"
+    });
   }
 });
 
@@ -65,9 +84,11 @@ router.get("/home/shops", async (req, res) => {
     res.json({ success: true, shopList });
   } catch (e) {
     console.log(e);
-    res
-      .status(500)
-      .json({ success: false, message: "Errore nella richiesta di dati" });
+    res.status(500).json({
+      success: false,
+      serverError: true,
+      message: "Errore nella richiesta di dati"
+    });
   }
 });
 
@@ -77,9 +98,11 @@ router.get("/home/users", async (req, res) => {
     res.json({ success: true, userList });
   } catch (e) {
     console.log(e);
-    res
-      .status(500)
-      .json({ success: false, message: "Errore nella richiesta di dati" });
+    res.status(500).json({
+      success: false,
+      serverError: true,
+      message: "Errore nella richiesta di dati"
+    });
   }
 });
 
@@ -96,6 +119,7 @@ router.get("/shops", async (req, res) => {
     console.log(e);
     res.status(500).json({
       success: false,
+      serverError: true,
       message: "Errore nella ricerca delle imprese nel database"
     });
   }
@@ -119,6 +143,7 @@ router.get("/shopProfile/:id", async (req, res) => {
     console.log(e);
     res.status(500).json({
       success: false,
+      serverError: true,
       message: "Errore nel connetersi alle informazioni del negozio"
     });
   }
@@ -148,9 +173,11 @@ router.get("/users/:username", async (req, res) => {
     res.json({ success: true, users: userList });
   } catch (e) {
     console.log(e);
-    res
-      .status(500)
-      .json({ message: "Errore nel recupero delle informazioni sugli utenti" });
+    res.status(500).json({
+      success: false,
+      serverError: true,
+      message: "Errore nel recupero delle informazioni sugli utenti"
+    });
   }
 });
 
@@ -164,6 +191,8 @@ router.get("/user/:username", async (req, res) => {
   } catch (e) {
     console.log(e);
     res.status(500).json({
+      success: false,
+      serverError: true,
       message: "Errore nel recupero delle informazioni sul profilo dell'utente"
     });
   }
@@ -190,9 +219,11 @@ router.get("/dashboard/user", checkAuth, async (req, res) => {
     }
   } catch (e) {
     console.log(e);
-    res
-      .status(500)
-      .json({ success: false, message: "Username non valido o non unico" });
+    res.status(500).json({
+      success: false,
+      serverError: true,
+      message: "Username non valido o non unico"
+    });
   }
 });
 
@@ -210,9 +241,11 @@ router.get("/dashboard/shop", checkAuth, async (req, res) => {
     }
   } catch (e) {
     console.log(e);
-    res
-      .status(500)
-      .json({ success: false, message: "Shop ID non valido o non unico" });
+    res.status(500).json({
+      success: false,
+      serverError: true,
+      message: "Shop ID non valido o non unico"
+    });
   }
 });
 

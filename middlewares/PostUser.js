@@ -14,11 +14,16 @@ const postUser = async (req, res, next) => {
         next();
       } catch (e) {
         console.log(e);
-        res.status(500).json({ message: "Username non è unico" });
+        res.status(500).json({
+          success: false,
+          serverError: true,
+          message: "Username non è unico"
+        });
       }
     } else {
       // not authenticated
       res.status(401).json({
+        success: false,
         message:
           "Nessun account connesso nè informazione valida per creare nuovo account"
       });
@@ -59,7 +64,11 @@ const postUser = async (req, res, next) => {
     } catch (e) {
       res
         .status(500)
-        .json({ message: "Errore nella registrazione dell'utente" });
+        .json({
+          success: false,
+          serverError: true,
+          message: "Errore nella registrazione dell'utente"
+        });
       console.log(e);
     }
   }
