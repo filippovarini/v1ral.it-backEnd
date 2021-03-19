@@ -18,6 +18,20 @@ const shopInfos = {
       amount
     ]);
     return true;
+  },
+  /** Get services from id */
+  servicesFromId: async id => {
+    const services = await pool.query("SELECT * FROM service WHERE shop = $1", [
+      id
+    ]);
+    return services.rows;
+  },
+  /** Get goals from id */
+  goalsFromId: async id => {
+    const services = await pool.query("SELECT * FROM goal WHERE shop = $1", [
+      id
+    ]);
+    return services.rows;
   }
 };
 

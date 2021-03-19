@@ -36,11 +36,6 @@ FROM shop LEFT JOIN (premium JOIN "user" ON premium."user" = "user".username) AS
 WHERE shop.id = $1
 GROUP BY shop.id`;
 
-pool
-  .query(detaliedInfoQuery, [2])
-  .then(res => console.log(res.rows))
-  .catch(e => console.log(e));
-
 /**
  * Shop Queries
  * !! AT the moment NOT OPTIMIZED
@@ -92,7 +87,7 @@ const shopsQueries = {
   },
   /** Returns long and detalied list of values */
   getProfileInfo: async id => {
-    const shop = await pool.query(listQuery + " WHERE shop.id = $1", [id]);
+    const shop = await pool.query(detaliedInfoQuery, [id]);
     if (shop.rowCount !== 1) throw "Id must be unique and valid";
     else return shop.rows[0];
   },

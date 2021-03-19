@@ -12,6 +12,8 @@ const checkNotAuth = require("../middlewares/CheckNotAuth");
 const cases = require("../db/queries/cases");
 const shops = require("../db/queries/shops");
 const users = require("../db/queries/users");
+const premiums = require("../db/queries/premiums");
+const servicesAndGoals = require("../db/queries/servicesAndGoals");
 
 /** Gets name and profile for header */
 router.get("/header", checkAuth, async (req, res) => {
@@ -123,6 +125,17 @@ router.get("/shops", async (req, res) => {
   }
 });
 
+/** Checks if the user viewing the shop has should see it as added or not */
+const checkIfAdded = async (session, shopId) => {
+  const inCart = session.cart && session.cart.includes(shopId);
+  let alreadyBought = false;
+  if (session.loginId && session.loginId[0] === "@")
+    alreadyBought = await premiums.alreadyBought(session.loginId.slice(1), [
+      shopId
+    ]);
+  return inCart || alreadyBought;
+};
+
 /**
  * On Front-End, get /shopProfile/:id.
  * Send request to /page/shopProfile/:id
@@ -131,11 +144,15 @@ router.get("/shops", async (req, res) => {
 router.get("/shopProfile/:id", async (req, res) => {
   try {
     const shop = await shops.getProfileInfo(req.params.id);
-    await shops.viewed(req.params.id);
+    const services = await servicesAndGoals.servicesFromId(req.params.id);
+    const goals = await servicesAndGoals.goalsFromId(req.params.id);
+    const added = await checkIfAdded(req.session, req.params.id);
     res.json({
       success: true,
       shop,
-      added: req.session.cart && req.session.cart.includes(shop.id)
+      services,
+      goals,
+      added
     });
   } catch (e) {
     console.log(e);
