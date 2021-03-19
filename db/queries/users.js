@@ -41,7 +41,7 @@ const userQueries = {
   },
   getList: async () => {
     const users = await pool.query(
-      'SELECT "user".username, "user".type, COALESCE(data.rt, 0) AS rt, COALESCE(data.number, 0) AS number\
+      'SELECT "user".profileurl, "user".username, "user".type, COALESCE(data.rt, 0) AS rt, COALESCE(data.number, 0) AS number\
             FROM "user" LEFT JOIN ((SELECT challenger, COUNT(*) AS rt \
                                    FROM "user" \
                                    GROUP BY challenger) AS challenge \

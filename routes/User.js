@@ -86,9 +86,11 @@ router.post("/register", async (req, res) => {
 
 /* logs user in: 1. check username exists 2. compare passwords */
 router.post("/login", async (req, res) => {
-  let success = false;
+  console.log("got");
   try {
     const { login, psw } = req.body;
+    console.log(login);
+    console.log(psw);
     const queryString = isEmail(login)
       ? 'SELECT * FROM "user" WHERE email = $1'
       : 'SELECT * FROM "user" WHERE username = $1';
@@ -108,10 +110,16 @@ router.post("/login", async (req, res) => {
           success: false,
           message: "Nessun utente con queste credenziali"
         });
-    }
+    } else res.json({ success: false, message: "Username non valido" });
   } catch (e) {
     console.log(e);
-    res.status(500).json({ message: "Errore nel completamento del login" });
+    res
+      .status(500)
+      .json({
+        success: false,
+        serverError: true,
+        message: "Errore nel completamento del login"
+      });
   }
 });
 

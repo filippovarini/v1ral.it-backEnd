@@ -1,4 +1,5 @@
 const express = require("express");
+const pool = require("../db/db");
 
 const router = express.Router();
 
@@ -6,14 +7,40 @@ const router = express.Router();
 const checkCart = require("../middlewares/CheckCart");
 const checkTransactionId = require("../middlewares/CheckTransactionId");
 const checkAuth = require("../middlewares/CheckAuth");
+const checkNotAuth = require("../middlewares/CheckNotAuth");
 
 // queries
 const cases = require("../db/queries/cases");
 const shops = require("../db/queries/shops");
 const users = require("../db/queries/users");
 
-/* HOME */
+router.get("/header", checkAuth, async (req, res) => {
+  try {
+    if (req.session.loginId[0] === "@") {
+      const query = await pool.query(
+        'SELECT profileurl FROM "user" WHERE username = $1',
+        [req.session.loginId.slice(1)]
+      );
+      if (query.rowCount !== 1) throw "Username should be unique";
+      else res.json({ success: true, userProfile: query.rows[0].profileurl });
+    } else if (req.session.loginId[0] === "#") {
+      const query = await pool.query("SELECT logourl FROM shop WHERE id = $1", [
+        req.session.loginId.slice(1)
+      ]);
+      if (query.rowCount !== 1) throw "Shop Id should be unique";
+      else res.json({ success: true, userProfile: query.rows[0].logourl });
+    } else throw "Username prefix is invalid. Got " + req.session.loginId[0];
+  } catch (e) {
+    console.log(e);
+    res.json({
+      serverError: true,
+      success: false,
+      message: "Errore nel recuperare le informazioni dell'utente registrato"
+    });
+  }
+});
 
+/* HOME */
 router.get("/home/quickFacts", async (req, res) => {
   try {
     const rtIndex = await cases.avgRt();
@@ -81,19 +108,19 @@ router.get("/shops", async (req, res) => {
  */
 router.get("/shopProfile/:id", async (req, res) => {
   try {
-    console.log("sending first");
     const shop = await shops.getFromId(req.params.id);
-    console.log("done first");
     await shops.viewed(req.params.id);
-    res.json({ success: true, shop });
+    res.json({
+      success: true,
+      shop,
+      added: req.session.cart && req.session.cart.includes(shop.id)
+    });
   } catch (e) {
     console.log(e);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Errore nel connetersi alle informazioni del negozio"
-      });
+    res.status(500).json({
+      success: false,
+      message: "Errore nel connetersi alle informazioni del negozio"
+    });
   }
 });
 
@@ -140,6 +167,11 @@ router.get("/user/:username", async (req, res) => {
       message: "Errore nel recupero delle informazioni sul profilo dell'utente"
     });
   }
+});
+
+/* LOG IN - REGISTER */
+router.get("/login", checkNotAuth, (req, res) => {
+  res.json({ success: true });
 });
 
 /* DASHBOARDS */

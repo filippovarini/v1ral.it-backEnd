@@ -58,3 +58,10 @@ CREATE TABLE "goal"
     amount INTEGER NOT NULL,
     PRIMARY KEY (shop, name)
 );
+
+CREATE TABLE "bug"
+(
+    date TIMESTAMP NOT NULL PRIMARY KEY,
+    message VARCHAR(256) NOT NULL,
+    place VARCHAR(128) NOT NULL
+)
