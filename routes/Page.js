@@ -140,7 +140,7 @@ const isInCart = (session, shopId) => {
 };
 
 /** Checks if the shop has already been purchased by the user */
-const alreadyBought = async (userId, shopId) => {
+const checkAlreadyBought = async (userId, shopId) => {
   return await premiums.alreadyBought(userId, [shopId]);
 };
 
@@ -159,7 +159,7 @@ router.get("/shopProfile/:id", async (req, res) => {
       !added &&
       req.session.loginId &&
       req.session.loginId[0] === "@" &&
-      (await alreadyBought(req.session.loginId.slice(1)));
+      (await checkAlreadyBought(req.session.loginId.slice(1), req.params.id));
     res.json({
       success: true,
       shop,
