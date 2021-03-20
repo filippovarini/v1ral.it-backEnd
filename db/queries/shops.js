@@ -13,8 +13,9 @@ SELECT
   shop.province,
   shop.city,
   shop.currentprice,
-  COALESCE(SUM(info.amount), 0) AS disruptionIndex,
-  COALESCE(SUM(info.price), 0) AS financedSoFar
+  COALESCE(SUM(info.amount), 0) AS disruption_index,
+  COALESCE(SUM(info.price), 0) AS financed_so_far,
+  COALESCE(COUNT(DISTINCT info."user"), 0) AS premiums
 FROM shop LEFT JOIN (goal NATURAL JOIN premium) AS info
   ON shop.id = info.shop`;
 
@@ -27,10 +28,11 @@ SELECT
   shop.backgroundurl,
   shop.province,
   shop.city,
+  shop.bio,
   shop.currentprice,
-  COALESCE(SUM(info.price), 0) AS financedSoFar,
-  COALESCE(CAST(COUNT(CASE WHEN info.type = 'standard' THEN info."user" END) AS INT), 0) AS standardPremiums,
-  COALESCE(CAST(COUNT(CASE WHEN info.type = 'viral' THEN info."user" END) AS INT), 0) AS viralPremiums
+  COALESCE(SUM(info.price), 0) AS financed_so_far,
+  COALESCE(CAST(COUNT(info."user") AS INT), 0) AS total_premiums,
+  COALESCE(CAST(COUNT(CASE WHEN info.type = 'viral' THEN info."user" END) AS INT), 0) AS viral_premiums
 FROM shop LEFT JOIN (premium JOIN "user" ON premium."user" = "user".username) AS info
   ON shop.id = info.shop
 WHERE shop.id = $1

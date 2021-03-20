@@ -1,5 +1,6 @@
 No @ permitted in username
 Country = Italy mandatory
+GOALS mandatory!!
 
 
 // DATABASE

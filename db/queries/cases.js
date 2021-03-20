@@ -1,3 +1,4 @@
+const formatDates = require("../../HelperFunctions/formatDates");
 const pool = require("../db");
 
 const casesQueries = {
@@ -12,9 +13,10 @@ const casesQueries = {
   },
   total: async () => {
     const cases = await pool.query(
-      "SELECT CAST(COUNT(id) AS INT) AS number, DATE(date) AS date FROM transaction WHERE type = 'challenger' GROUP BY DATE(date) ORDER BY DATE"
+      // "SELECT CAST(COUNT(id) AS INT) AS number, DATE(date) AS date FROM transaction WHERE type = 'challenger' GROUP BY DATE(date) ORDER BY DATE"
+      "SELECT * FROM transaction WHERE type = 'challenger'"
     );
-    return cases.rows;
+    return formatDates(cases.rows);
   },
   avgRt: async () => {
     const avgRt = await pool.query(
