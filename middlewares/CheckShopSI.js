@@ -2,7 +2,9 @@
 const shopSI = (req, res, next) => {
   if (req.session.shopSI && req.session.shopSI.name) next();
   else {
-    res.status(401).json({
+    res.json({
+      success: false,
+      unauthorized: true,
       message: "Nessuna ricerca ancora effettuata"
     });
   }

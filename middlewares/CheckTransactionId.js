@@ -10,7 +10,11 @@ const checkTransactionId = async (req, res, next) => {
     next();
   } catch (e) {
     console.log(e);
-    res.status(401).json({ message: "Codice pagamento non valido" });
+    res.json({
+      success: false,
+      unauthorized: true,
+      message: "Codice pagamento non valido"
+    });
   }
 };
 

@@ -1,6 +1,11 @@
 const formatDates = require("../../HelperFunctions/formatDates");
 const pool = require("../db");
 
+const totalCasesFromTransactions =
+  "SELECT * FROM transaction WHERE type = 'challenger'";
+const totalCasesFromPremiums =
+  "SELECT date FROM premium JOIN transaction ON premium.transactionid = transaction.id";
+
 const casesQueries = {
   daily: async () => {
     const now = new Date();
@@ -14,7 +19,7 @@ const casesQueries = {
   total: async () => {
     const cases = await pool.query(
       // "SELECT CAST(COUNT(id) AS INT) AS number, DATE(date) AS date FROM transaction WHERE type = 'challenger' GROUP BY DATE(date) ORDER BY DATE"
-      "SELECT * FROM transaction WHERE type = 'challenger'"
+      totalCasesFromPremiums
     );
     return formatDates(cases.rows);
   },

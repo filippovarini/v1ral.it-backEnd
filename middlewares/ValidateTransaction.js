@@ -9,7 +9,11 @@ const premiumQueries = require("../db/queries/premiums");
 const validateChallengerTransaction = async (req, res, next) => {
   try {
     if (!req.session.cart || req.session.cart.length === 0)
-      res.status(401).json({ success: false, message: "Carrello vuoto" });
+      res.json({
+        success: false,
+        unauthorized: true,
+        message: "Carrello vuoto"
+      });
     else {
       // check not already bought
       const alreadyBought = await premiumQueries.alreadyBought(

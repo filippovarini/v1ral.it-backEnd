@@ -10,14 +10,17 @@ const checkCart = async (req, res, next) => {
       req.shops = shops;
       next();
     } else {
-      res.status(401).json({
+      res.json({
+        success: false,
+        unauthorized: true,
+        cartEmpty: true,
         message:
           "Accesso negato perché nessun focolaio è stato ancora selezionato"
       });
     }
   } catch (e) {
     console.log(e);
-    res.status(500).json({
+    res.json({
       success: false,
       serverError: true,
       message:

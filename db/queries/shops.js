@@ -19,6 +19,27 @@ SELECT
 FROM shop LEFT JOIN (goal NATURAL JOIN premium) AS info
   ON shop.id = info.shop`;
 
+/** Gets list plus a numeric value showing that the user has already bought that
+ * shop:
+ * 0: no
+ * 1 yes*/
+const rawListQueryAdded = `
+SELECT 
+  shop.id,
+  shop.name,
+  shop.category, 
+  shop.logourl,
+  shop.backgroundurl,
+  shop.province,
+  shop.city,
+  shop.currentprice,
+  COALESCE(SUM(info.amount), 0) AS disruption_index,
+  COALESCE(SUM(info.price), 0) AS financed_so_far,
+  COALESCE(COUNT(DISTINCT info."user"), 0) AS premiums,
+  CASE WHEN COALESCE(CAST(COUNT(CASE WHEN info."user" = $1 THEN info."user" END) AS INT), 0) = 0 THEN 0 ELSE 1 END AS alreadyBought
+FROM shop LEFT JOIN (goal NATURAL JOIN premium) AS info
+  ON shop.id = info.shop`;
+
 const detaliedInfoQuery = `
 SELECT 
   shop.id,
@@ -44,8 +65,10 @@ GROUP BY shop.id`;
  * @todo Optimize queries
  */
 const shopsQueries = {
-  getList: async () => {
-    const shops = await pool.query(rawListQuery + " GROUP BY shop.id");
+  getList: async shopId => {
+    const shops = await pool.query(rawListQueryAdded + " GROUP BY shop.id", [
+      shopId
+    ]);
     return shops.rows;
   },
   getCities: async () => {
@@ -56,25 +79,25 @@ const shopsQueries = {
    * Get shops by name inserted. Using patterns to get flexible search. Filter
    * by name and city and category
    */
-  getFromSearch: async (name, city, category) => {
+  getFromSearch: async (name, city, category, userId) => {
     const namePatterns = name
       .toLowerCase()
       .split(" ")
       .filter(str => str !== "") // make it work even with multiple spaces
       .map((str, i) => (i == 0 ? `%${str}%` : ` ${str}%`))
       .join("");
-    const nameFilter = " WHERE LOWER(shop.name) LIKE $1";
+    const nameFilter = " WHERE LOWER(shop.name) LIKE $2";
     const cityFilter = city
       ? ` AND LOWER(shop.city) LIKE '%${city.toLowerCase()}%'`
       : "";
     const categoryFilter = category ? ` AND category LIKE '%${category}%'` : "";
     const shops = await pool.query(
-      rawListQuery +
+      rawListQueryAdded +
         nameFilter +
         cityFilter +
         categoryFilter +
         " GROUP BY shop.id",
-      [namePatterns]
+      [userId, namePatterns]
     );
     return shops.rows;
   },

@@ -34,7 +34,8 @@ const checkUpdatable = (req, res, next) => {
     Object.keys(req.body.update).every(key => updatable.includes(key))
   )
     next();
-  else res.status(401).json({ success: false, message: "Update negato" });
+  else
+    res.json({ success: false, unauthorized: true, message: "Update negato" });
 };
 
 module.exports = checkUpdatable;

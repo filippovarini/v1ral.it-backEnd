@@ -22,8 +22,9 @@ const postUser = async (req, res, next) => {
       }
     } else {
       // not authenticated
-      res.status(401).json({
+      res.json({
         success: false,
+        unauthorized: true,
         message:
           "Nessun account connesso nè informazione valida per creare nuovo account"
       });
@@ -62,13 +63,11 @@ const postUser = async (req, res, next) => {
       req.session.loginId = `@${newUser.rows[0].username}`;
       next();
     } catch (e) {
-      res
-        .status(500)
-        .json({
-          success: false,
-          serverError: true,
-          message: "Errore nella registrazione dell'utente"
-        });
+      res.status(500).json({
+        success: false,
+        serverError: true,
+        message: "Errore nella registrazione dell'utente"
+      });
       console.log(e);
     }
   }

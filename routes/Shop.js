@@ -169,6 +169,7 @@ router.put("/removeFromCart", (req, res) => {
   if (!req.session.cart)
     res.json({
       success: false,
+      cartEmpty: true,
       message: "Nessun carrello salvato nella sessione"
     });
   else {

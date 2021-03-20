@@ -110,10 +110,19 @@ router.get("/home/users", async (req, res) => {
 /** Accessible even without any search identifier */
 router.get("/shops", async (req, res) => {
   try {
+    const userId =
+      req.session.loginId && req.session.loginId[0] === "@"
+        ? req.session.loginId.slice(1)
+        : null;
     if (req.session.shopSI) {
       const { name, city, category } = req.session.shopSI;
-      shopList = await shops.getFromSearch(name, city, category);
-    } else shopList = await shops.getList();
+      shopList = await shops.getFromSearch(name, city, category, userId);
+    } else shopList = await shops.getList(userId);
+    // search for already bought
+    shopList.forEach(shop => (shop.alreadybought = shop.alreadybought !== 0));
+    // search for in cart
+    if (req.session.cart)
+      shopList.forEach(shop => (shop.inCart = isInCart(req.session, shop.id)));
     res.json({ success: true, shops: shopList });
   } catch (e) {
     console.log(e);
@@ -126,14 +135,13 @@ router.get("/shops", async (req, res) => {
 });
 
 /** Checks if the user viewing the shop has should see it as added or not */
-const checkIfAdded = async (session, shopId) => {
-  const inCart = session.cart && session.cart.includes(shopId);
-  let alreadyBought = false;
-  if (session.loginId && session.loginId[0] === "@")
-    alreadyBought = await premiums.alreadyBought(session.loginId.slice(1), [
-      shopId
-    ]);
-  return inCart || alreadyBought;
+const isInCart = (session, shopId) => {
+  return session.cart && session.cart.includes(shopId);
+};
+
+/** Checks if the shop has already been purchased by the user */
+const alreadyBought = async (userId, shopId) => {
+  return await premiums.alreadyBought(userId, [shopId]);
 };
 
 /**
@@ -146,13 +154,19 @@ router.get("/shopProfile/:id", async (req, res) => {
     const shop = await shops.getProfileInfo(req.params.id);
     const services = await servicesAndGoals.servicesFromId(req.params.id);
     const goals = await servicesAndGoals.goalsFromId(req.params.id);
-    const added = await checkIfAdded(req.session, req.params.id);
+    const added = await isInCart(req.session, parseInt(req.params.id));
+    const alreadyBought =
+      !added &&
+      req.session.loginId &&
+      req.session.loginId[0] === "@" &&
+      (await alreadyBought(req.session.loginId.slice(1)));
     res.json({
       success: true,
       shop,
       services,
       goals,
-      added
+      added,
+      alreadyBought
     });
   } catch (e) {
     console.log(e);
