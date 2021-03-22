@@ -5,6 +5,7 @@ const premiumQueries = require("../db/queries/premiums");
  * - checking that the cart is not empty
  * - getting shop prices from cart
  * - creating a checkout session
+ * - DON\T CHECK IF ALREADY BOUGHT AS THAT IS CHECKED ON FRONT_END
  */
 const validateChallengerTransaction = async (req, res, next) => {
   try {
@@ -15,14 +16,6 @@ const validateChallengerTransaction = async (req, res, next) => {
         message: "Carrello vuoto"
       });
     else {
-      // check not already bought
-      const alreadyBought = await premiumQueries.alreadyBought(
-        req.session.loginId.slice(1),
-        req.session.cart
-      );
-      if (req.session.loginId && alreadyBought)
-        throw "I negozi selezionati sono già stati comprati dallo stesso utente";
-
       // success. Create checkout session
       const shops = await shopQueries.getPriceFromIds(req.session.cart);
       const checkout = shops.map(shop => {

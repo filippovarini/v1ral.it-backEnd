@@ -1,4 +1,5 @@
 const express = require("express");
+const pool = require("../db/db");
 
 const router = express.Router();
 
@@ -24,6 +25,7 @@ router.get("/header", checkAuth, async (req, res) => {
         res.json({
           success: true,
           name: "@" + user[0].username,
+          id: user[0].username,
           userProfile: user[0].profileurl
         });
         break;
@@ -33,6 +35,7 @@ router.get("/header", checkAuth, async (req, res) => {
         res.json({
           success: true,
           name: "#" + shop[0].name,
+          id: shop[0].id,
           userProfile: shop[0].logourl
         });
         break;
@@ -151,6 +154,7 @@ const checkAlreadyBought = async (userId, shopId) => {
  */
 router.get("/shopProfile/:id", async (req, res) => {
   try {
+    shops.viewed(req.params.id);
     const shop = await shops.getProfileInfo(req.params.id);
     const services = await servicesAndGoals.servicesFromId(req.params.id);
     const goals = await servicesAndGoals.goalsFromId(req.params.id);
@@ -170,6 +174,14 @@ router.get("/shopProfile/:id", async (req, res) => {
     });
   } catch (e) {
     console.log(e);
+    if (e === "Id must be unique and valid") {
+      res.status(500).json({
+        success: false,
+        serverError: false,
+        invalidShopId: true,
+        message: "Id del focolaio invalido"
+      });
+    }
     res.status(500).json({
       success: false,
       serverError: true,
@@ -178,11 +190,38 @@ router.get("/shopProfile/:id", async (req, res) => {
   }
 });
 
-/* Checkout info */
-router.get("/checkout", checkCart, (req, res) => {
-  const shops = req.shops;
-  req.shops = null; // free up req of unnecessary data
-  res.json({ success: true, shops });
+// Fetches full info of a user
+const getUser = async userId => {
+  const user = await pool.query('SELECT * FROM "user" WHERE username = $1', [
+    userId
+  ]);
+  if (user.rowCount !== 1)
+    throw "Username should be unique and valid. Expected 1 result, but got: " +
+      user.rowCount;
+  return user.rows[0];
+};
+
+/** Checkout info
+ * sends back shops and whether the user is logged in or has a challenger
+ */
+router.get("/checkout", checkCart, async (req, res) => {
+  try {
+    const shops = req.shops;
+    req.shops = null; // free up req of unnecessary data
+    const isLogged = Boolean(
+      req.session.loginId && req.session.loginId[0] === "@"
+    );
+    const challenger = req.session.challenger;
+    const user = isLogged ? await getUser(req.session.loginId.slice(1)) : null;
+    res.json({ success: true, shops, isLogged, challenger, user });
+  } catch (e) {
+    console.log(e);
+    res.json({
+      success: false,
+      error: true,
+      message: "Errore nel recupero delle informazioni sull'utente~"
+    });
+  }
 });
 
 /** Checkout confirmation
@@ -198,7 +237,7 @@ router.get("/success/:transactionId", checkTransactionId, async (req, res) => {
  */
 router.get("/users/:username", async (req, res) => {
   try {
-    const userList = await users.getByName(req.params.username);
+    const userList = await users.getLongInfo(req.params.username);
     res.json({ success: true, users: userList });
   } catch (e) {
     console.log(e);
@@ -213,10 +252,19 @@ router.get("/users/:username", async (req, res) => {
 /** Send back single user info
  * get  username from query params
  */
-router.get("/user/:username", async (req, res) => {
+router.get("/userProfile/:username", async (req, res) => {
   try {
-    const user = await users.getUnique(req.params.username);
-    res.json({ success: true, user: user });
+    const user = await users.getLongInfo(req.params.username);
+    if (user.length != 1) {
+      res.json({
+        success: false,
+        invalidUsername: true,
+        message: "Username contagiato invalido"
+      });
+    } else {
+      const shopList = await shops.getPurchasedByUser(user[0].username);
+      res.json({ success: true, user: user[0], shops: shopList });
+    }
   } catch (e) {
     console.log(e);
     res.status(500).json({

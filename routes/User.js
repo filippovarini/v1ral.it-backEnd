@@ -37,7 +37,7 @@ router.get("/usernameCheck/:username", async (req, res) => {
  */
 router.get("/name/:username", async (req, res) => {
   try {
-    const users = await userQueries.getByName(req.params.username);
+    const users = await userQueries.getLongInfo(req.params.username);
     res.json({ success: true, users });
   } catch (e) {
     console.log(e);
@@ -57,7 +57,7 @@ router.post("/register", async (req, res) => {
     type,
     challenger,
     city,
-    provence,
+    province,
     street,
     postcode,
     profileUrl,
@@ -73,7 +73,7 @@ router.post("/register", async (req, res) => {
       type,
       challenger,
       city,
-      provence,
+      province,
       street,
       postcode,
       profileUrl,
@@ -95,6 +95,7 @@ router.post("/register", async (req, res) => {
 /* logs user in: 1. check username exists 2. compare passwords */
 router.post("/login", async (req, res) => {
   try {
+    let success = false;
     const { login, psw } = req.body;
     const queryString = isEmail(login)
       ? 'SELECT * FROM "user" WHERE email = $1'
@@ -106,6 +107,7 @@ router.post("/login", async (req, res) => {
         const pswMatch = await bcrypt.compare(psw, query.rows[0].psw);
         if (pswMatch) {
           success = true;
+          if (req.session.cart) req.session.cart = null;
           req.session.loginId = `@${query.rows[0].username}`;
           res.json({ success: true, user: query.rows[0] });
         }

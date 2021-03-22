@@ -4,6 +4,11 @@ const session = require("express-session");
 const mongoose = require("mongoose");
 const MongoDBSession = require("connect-mongodb-session")(session);
 
+// multer s3
+// multer upload
+const upload = require("./services/file-upload");
+const singleUpload = upload.single("image");
+
 // routers
 const userRouter = require("./routes/User");
 const pageRouter = require("./routes/Page");
@@ -66,6 +71,22 @@ if (process.env.NODE_ENV === "production") {
 
 app.get("/session", (req, res) => {
   res.json({ session: req.session });
+});
+
+/** Post any kind of image to s3 and get back an url */
+app.post("/image", (req, res) => {
+  singleUpload(req, res, error => {
+    if (error) {
+      console.log(error);
+      return res.json({
+        success: false,
+        serverError: true,
+        message: "Errore nel caricamento dell'imagine"
+      });
+    } else {
+      return res.json({ success: true, url: req.file.location });
+    }
+  });
 });
 
 app.put("/logout", async (req, res) => {

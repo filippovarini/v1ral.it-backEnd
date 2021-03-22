@@ -19,7 +19,6 @@ const userQueries = require("../db/queries/users");
  * - saves transaction and premiums
  * - if the user is new, creates new user
  * - deletes cart session
- * @todo if request unsuccessful, delete user
  */
 router.post(
   "/challengerCheckout",

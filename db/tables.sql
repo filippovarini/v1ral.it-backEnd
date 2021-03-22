@@ -31,7 +31,8 @@ CREATE TABLE "user"
     postcode INTEGER NOT NULL,
     profileUrl VARCHAR(512) NOT NULL,
     psw VARCHAR(256) NOT NULL,
-    reason VARCHAR(256) NOT NULL
+    reason VARCHAR(256)
+    --nullable
 );
 
 CREATE TABLE "premium"

@@ -75,6 +75,18 @@ const shopsQueries = {
     const cities = await pool.query("SELECT DISTINCT city FROM shop");
     return cities.rows.map(row => row.city);
   },
+  /** Returns the info of all shops purchased by a specific user */
+  getPurchasedByUser: async username => {
+    const shops = await pool.query(
+      rawListQuery +
+        ` WHERE shop.id = ANY (SELECT shop 
+                              FROM premium 
+                              WHERE premium."user" = $1) 
+          GROUP BY shop.id`,
+      [username]
+    );
+    return shops.rows;
+  },
   /**
    * Get shops by name inserted. Using patterns to get flexible search. Filter
    * by name and city and category
@@ -144,6 +156,11 @@ const shopsQueries = {
       "SELECT id, currentprice FROM shop WHERE id = ANY ($1)",
       [ids]
     );
+    if (shops.rowCount !== ids.length)
+      throw "Invalid shop id in cart. Valid shops are " +
+        shops.rowCount +
+        " but expected in cart " +
+        ids.length;
     return shops.rows;
   },
   register: async info => {

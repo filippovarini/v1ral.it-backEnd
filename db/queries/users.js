@@ -1,13 +1,34 @@
 const pool = require("../db");
 
+// query string
+const listQuery = `
+SELECT "user".profileurl,
+       "user".username,
+       "user".type,
+       "user".challenger,
+       "user".city,
+       "user".province,
+       "user".type,
+       COALESCE(data.rt, 0)     AS rt,
+       COALESCE(data.number, 0) AS number
+FROM   "user"
+       LEFT JOIN ((SELECT challenger,
+                         COUNT(*) AS rt
+                  FROM   "user"
+                  GROUP  BY challenger) AS challenge
+                  FULL OUTER JOIN (SELECT "user",
+                                          COUNT(*) AS number
+                                   FROM   premium
+                                   GROUP  BY "user") AS premiums
+                               ON premiums."user" = challenge.challenger) AS data
+              ON "user".username = COALESCE(data."user", data.challenger) `;
+
 const userQueries = {
-  /** Get general user (pattern) */
-  getByName: async username => {
+  /** Get general user (pattern) long info */
+  getLongInfo: async username => {
     const pattern = `%${username}%`;
     const users = await pool.query(
-      'SELECT username, profileurl\
-      FROM "user"\
-      WHERE LOWER(username) LIKE $1',
+      listQuery + " WHERE LOWER(username) LIKE $1",
       [pattern]
     );
     return users.rows;
@@ -40,19 +61,7 @@ const userQueries = {
     }
   },
   getList: async () => {
-    const users = await pool.query(
-      'SELECT "user".profileurl, "user".username, "user".type, COALESCE(data.rt, 0) AS rt, COALESCE(data.number, 0) AS number\
-            FROM "user" LEFT JOIN ((SELECT challenger, COUNT(*) AS rt \
-                                   FROM "user" \
-                                   GROUP BY challenger) AS challenge \
-                                   FULL OUTER JOIN \
-                                   (SELECT "user", COUNT(*) AS number \
-                                    FROM premium \
-                                    GROUP BY "user") AS premiums\
-                                    ON premiums."user" = challenge.challenger)\
-                                    AS data\
-                ON "user".username = COALESCE(data."user", data.challenger)'
-    );
+    const users = await pool.query(listQuery);
     return users.rows;
   },
   usernameUnique: async username => {
