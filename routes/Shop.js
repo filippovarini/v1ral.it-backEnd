@@ -11,6 +11,7 @@ const checkUpdatable = require("../middlewares/CheckUpdatable");
 
 // db queries
 const shopQueries = require("../db/queries/shops");
+const servicesAndGoals = require("../db/queries/servicesAndGoals");
 
 // gets list of cities
 router.get("/cities", async (req, res) => {
@@ -26,7 +27,11 @@ router.get("/cities", async (req, res) => {
   }
 });
 
-/** Register shop */
+/** Register shop
+ * @param shop object with all new user shop info
+ * @param goals goals to insert
+ * @param services services to insert
+ */
 router.post("/register", async (req, res) => {
   const {
     name,
@@ -45,7 +50,7 @@ router.post("/register", async (req, res) => {
     backgroundurl,
     logourl,
     psw
-  } = req.body;
+  } = req.body.shop;
   try {
     const hashed = await bcrypt.hash(psw, 10);
     const newShopUser = await shopQueries.register([
@@ -66,8 +71,18 @@ router.post("/register", async (req, res) => {
       logourl,
       hashed
     ]);
-    req.session.loginId = `#${newShopUser}`;
-    res.json({ success: true, shopUser: newShopUser });
+    await servicesAndGoals.insertMultipleServices(
+      newShopUser.id,
+      req.body.services
+    );
+    await servicesAndGoals.insertMultipleGoals(newShopUser.id, req.body.goals);
+    req.session.loginId = `#${newShopUser.id}`;
+    res.json({
+      success: true,
+      id: newShopUser.id,
+      name: newShopUser.name,
+      userProfile: newShopUser.logourl
+    });
   } catch (e) {
     console.log(e);
     res.status(500).json({

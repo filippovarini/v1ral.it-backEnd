@@ -2,16 +2,9 @@ No @ permitted in username
 Country = Italy mandatory
 GOALS mandatory!!
 
-
-// DATABASE
-username VARCHAR(40/100)
-email VARCHAR(255)
-psw VARCHAR(255)
-
-
 CODES:
 401: not authorized
 500: server error
 
 RESPONSE FORMAT:
-{successful, message(ITA)}
+{successful, serverError, message(ITA)}

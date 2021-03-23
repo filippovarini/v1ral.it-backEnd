@@ -10,6 +10,33 @@ const shopInfos = {
     ]);
     return true;
   },
+  /** Insert multiple services */
+  insertMultipleServices: async (shopId, services) => {
+    let values = "";
+    services.forEach(
+      (service, i) =>
+        (values +=
+          (i == 0 ? "" : ", ") +
+          `(${shopId}, '${service.name}', '${service.image}', '${service.type}')`)
+    );
+    const servicesQuery = await pool.query(
+      `INSERT INTO service VALUES ${values} RETURNING *`
+    );
+    return servicesQuery.rows;
+  },
+  /** Insert multiple goals */
+  insertMultipleGoals: async (shopId, goals) => {
+    let values = "";
+    goals.forEach(
+      (goal, i) =>
+        (values +=
+          (i == 0 ? "" : ", ") + `(${shopId}, '${goal.name}', ${goal.amount})`)
+    );
+    const servicesQuery = await pool.query(
+      `INSERT INTO goal VALUES ${values} RETURNING *`
+    );
+    return servicesQuery.rows;
+  },
   /** Inserts goal */
   insertGoal: async (shop, name, amount) => {
     await pool.query("INSERT INTO goal VALUES ($1, $2, $3)", [

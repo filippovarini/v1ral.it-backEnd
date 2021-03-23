@@ -116,7 +116,7 @@ const shopsQueries = {
   /** Retreives name and logourl for header profile */
   getProfile: async id => {
     const shop = await pool.query(
-      "SELECT name, logourl FROM shop WHERE id = $1",
+      "SELECT name, logourl, id FROM shop WHERE id = $1",
       [id]
     );
     if (shop.rowCount !== 1) throw "Id must be unique and valid";
@@ -184,10 +184,10 @@ const shopsQueries = {
         logoURL,
         psw)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-      RETURNING id`,
+      RETURNING id, name, logourl`,
       info
     );
-    return query.rows[0].id;
+    return query.rows[0];
   },
   /** Increments view count by 1 */
   viewed: async id => {
