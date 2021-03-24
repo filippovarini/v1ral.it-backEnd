@@ -159,19 +159,29 @@ router.put("/search", (req, res) => {
  * Doesn't checkAuth as to click button you need to have checked it
  * @todo use a safer middleware to handle requests not from browser
  * @param update object with values to edit
+ * @param oldPsw?, newPsw? for password
  */
 router.put("/updateInfo", checkAuth, checkUpdatable, async (req, res) => {
   try {
     if (req.session.loginId[0] !== "@")
       throw `LoginId prefix should be @ but is ${req.session.loginId[0]}`;
-    else {
-      // await user
-      const user = await userQueries.update(
-        req.session.loginId.slice(1),
-        req.body.update
+    const username = req.session.loginId.slice(1);
+    let update = req.body.update;
+    if (req.body.oldPsw) {
+      const newHashedPsw = await checkPswUpdate(
+        req.body.oldPsw,
+        req.body.newPsw,
+        username
       );
-      res.json({ success: true, user });
+      if (!newHashedPsw) {
+        res.json({
+          success: false,
+          pswInvalid: true
+        });
+      } else update = { ...req.body.update, psw: newHashedPsw };
     }
+    const user = await userQueries.update(username, update);
+    res.json({ success: true, user });
   } catch (e) {
     console.log(e);
     res.status(500).json({
@@ -182,37 +192,13 @@ router.put("/updateInfo", checkAuth, checkUpdatable, async (req, res) => {
   }
 });
 
-router.put("/updatePsw", checkAuth, async (req, res) => {
-  try {
-    if (req.session.loginId[0] !== "@")
-      throw `LoginId prefix should be @ but is ${req.session.loginId[0]}`;
-    else {
-      const { oldPsw, newPsw } = req.body;
-      const dbPsw = await userQueries.getOldPsw(req.session.loginId.slice(1));
-      const pswMatch = await bcrypt.compare(oldPsw, dbPsw);
-      if (pswMatch) {
-        const hashed = await bcrypt.hash(newPsw, 10);
-        const user = await userQueries.update(req.session.loginId.slice(1), {
-          psw: hashed
-        });
-        res.json({
-          success: true,
-          message: "Password aggiornata correttamente",
-          user
-        });
-      } else {
-        res.json({ success: false, message: "Vecchia password non corretta" });
-      }
-    }
-  } catch (e) {
-    console.log(e);
-    res.status(500).json({
-      success: false,
-      serverError: true,
-      message:
-        "Errore nel salvataggio delle modifiche. Ti consigliamo di riprovare"
-    });
-  }
-});
+const checkPswUpdate = async (oldPsw, newPsw, username) => {
+  const dbPsw = await userQueries.getOldPsw(username);
+  const pswMatch = await bcrypt.compare(oldPsw, dbPsw);
+  if (pswMatch) {
+    const hashed = await bcrypt.hash(newPsw, 10);
+    return hashed;
+  } else return false;
+};
 
 module.exports = router;

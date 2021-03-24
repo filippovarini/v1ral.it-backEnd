@@ -1,1 +1,2 @@
 - OPTIMIZE QUERIES AND CHECK THEM
+- Check that a user cannot buy a shop already bought even from postman

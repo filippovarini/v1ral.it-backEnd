@@ -16,6 +16,29 @@ const users = require("../db/queries/users");
 const premiums = require("../db/queries/premiums");
 const servicesAndGoals = require("../db/queries/servicesAndGoals");
 
+// helper functions
+const getUserObject = require("../functions/getUserProfile");
+/** Checks if the user viewing the shop has should see it as added or not */
+const isInCart = (session, shopId) => {
+  return session.cart && session.cart.includes(shopId);
+};
+
+/** Fetches full info of a user. */
+const getUser = async userId => {
+  const user = await pool.query('SELECT * FROM "user" WHERE username = $1', [
+    userId
+  ]);
+  if (user.rowCount !== 1)
+    throw "Username should be unique and valid. Expected 1 result, but got: " +
+      user.rowCount;
+  return user.rows[0];
+};
+
+/** Checks if the shop has already been purchased by the user */
+const checkAlreadyBought = async (userId, shopId) => {
+  return await premiums.alreadyBought(userId, [shopId]);
+};
+
 /** Gets name and profile for header */
 router.get("/header", checkAuth, async (req, res) => {
   try {
@@ -137,16 +160,6 @@ router.get("/shops", async (req, res) => {
   }
 });
 
-/** Checks if the user viewing the shop has should see it as added or not */
-const isInCart = (session, shopId) => {
-  return session.cart && session.cart.includes(shopId);
-};
-
-/** Checks if the shop has already been purchased by the user */
-const checkAlreadyBought = async (userId, shopId) => {
-  return await premiums.alreadyBought(userId, [shopId]);
-};
-
 /**
  * On Front-End, get /shopProfile/:id.
  * Send request to /page/shopProfile/:id
@@ -189,17 +202,6 @@ router.get("/shopProfile/:id", async (req, res) => {
     });
   }
 });
-
-// Fetches full info of a user
-const getUser = async userId => {
-  const user = await pool.query('SELECT * FROM "user" WHERE username = $1', [
-    userId
-  ]);
-  if (user.rowCount !== 1)
-    throw "Username should be unique and valid. Expected 1 result, but got: " +
-      user.rowCount;
-  return user.rows[0];
-};
 
 /** Checkout info
  * sends back shops and whether the user is logged in or has a challenger
@@ -254,17 +256,8 @@ router.get("/users/:username", async (req, res) => {
  */
 router.get("/userProfile/:username", async (req, res) => {
   try {
-    const user = await users.getLongInfo(req.params.username);
-    if (user.length != 1) {
-      res.json({
-        success: false,
-        invalidUsername: true,
-        message: "Username contagiato invalido"
-      });
-    } else {
-      const shopList = await shops.getPurchasedByUser(user[0].username);
-      res.json({ success: true, user: user[0], shops: shopList });
-    }
+    const response = await getUserObject(req.params.username);
+    res.json(response);
   } catch (e) {
     console.log(e);
     res.status(500).json({
@@ -291,15 +284,36 @@ router.get("/dashboard/user", checkAuth, async (req, res) => {
     if (req.session.loginId[0] !== "@")
       throw `LoginId prefix should be @ but is ${req.session.loginId[0]}`;
     else {
-      const user = await users.getUnique(req.session.loginId.slice(1));
-      res.json({ success: true, user: user[0] });
+      const response = await getUserObject(req.session.loginId.slice(1));
+      res.json(response);
     }
   } catch (e) {
     console.log(e);
     res.status(500).json({
       success: false,
       serverError: true,
-      message: "Username non valido o non unico"
+      message:
+        "Errore nel recupero delle informazioni dell'utente per la dashboard"
+    });
+  }
+});
+
+/** Get user info for settings */
+router.get("/user/settings", checkAuth, async (req, res) => {
+  try {
+    if (req.session.loginId[0] !== "@")
+      throw `LoginId prefix should be @ but is ${req.session.loginId[0]}`;
+    else {
+      const user = await getUser(req.session.loginId.slice(1));
+      res.json({ success: true, user });
+    }
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      success: false,
+      serverError: true,
+      message:
+        "Errore nel recupero delle informazioni dell'utente per i settings"
     });
   }
 });

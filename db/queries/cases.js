@@ -1,4 +1,4 @@
-const formatDates = require("../../HelperFunctions/formatDates");
+const formatDates = require("../../functions/formatDates");
 const pool = require("../db");
 
 const totalCasesFromTransactions =
