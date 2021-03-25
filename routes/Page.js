@@ -144,12 +144,20 @@ router.get("/shops", async (req, res) => {
       const { name, city, category } = req.session.shopSI;
       shopList = await shops.getFromSearch(name, city, category, userId);
     } else shopList = await shops.getList(userId);
-    // search for already bought
+    // search for already bought (make boolean)
     shopList.forEach(shop => (shop.alreadybought = shop.alreadybought !== 0));
     // search for in cart
     if (req.session.cart)
       shopList.forEach(shop => (shop.inCart = isInCart(req.session, shop.id)));
-    res.json({ success: true, shops: shopList });
+    const cities = await shops.getCities();
+    const categories = await shops.getCategories();
+    res.json({
+      success: true,
+      shops: shopList,
+      shopSI: req.session.shopSI,
+      cities,
+      categories
+    });
   } catch (e) {
     console.log(e);
     res.status(500).json({

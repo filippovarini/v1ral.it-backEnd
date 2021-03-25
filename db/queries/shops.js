@@ -103,6 +103,10 @@ const shopsQueries = {
     const cities = await pool.query("SELECT DISTINCT city FROM shop");
     return cities.rows.map(row => row.city);
   },
+  getCategories: async () => {
+    const category = await pool.query("SELECT DISTINCT category FROM shop");
+    return category.rows.map(row => row.category);
+  },
   /** Returns the info of all shops purchased by a specific user */
   getPurchasedByUser: async username => {
     const shops = await pool.query(

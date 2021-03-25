@@ -13,20 +13,6 @@ const checkUpdatable = require("../middlewares/CheckUpdatable");
 const shopQueries = require("../db/queries/shops");
 const servicesAndGoals = require("../db/queries/servicesAndGoals");
 
-// gets list of cities
-router.get("/cities", async (req, res) => {
-  try {
-    const cities = await shopQueries.getCities();
-    res.json({ success: true, cities });
-  } catch (e) {
-    console.log(e);
-    res.json({
-      success: false,
-      message: "Errore nel recuperare la lista delle città"
-    });
-  }
-});
-
 /** Register shop
  * @param shop object with all new user shop info
  * @param goals goals to insert
