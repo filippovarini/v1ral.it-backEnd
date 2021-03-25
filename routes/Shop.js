@@ -222,6 +222,10 @@ router.put("/updateInfo", checkAuth, checkUpdatable, async (req, res) => {
   }
 });
 
+/**
+ * @param oldPsw
+ * @param newPsw
+ */
 router.put("/updatePsw", checkAuth, async (req, res) => {
   try {
     if (req.session.loginId[0] !== "#")
@@ -241,7 +245,11 @@ router.put("/updatePsw", checkAuth, async (req, res) => {
           shop
         });
       } else {
-        res.json({ success: false, message: "Vecchia password non corretta" });
+        res.json({
+          success: false,
+          pswInvalid: true,
+          message: "Vecchia password non corretta"
+        });
       }
     }
   } catch (e) {

@@ -172,6 +172,7 @@ router.get("/shopProfile/:id", async (req, res) => {
     const services = await servicesAndGoals.servicesFromId(req.params.id);
     const goals = await servicesAndGoals.goalsFromId(req.params.id);
     const added = await isInCart(req.session, parseInt(req.params.id));
+    const cases = await shops.getCases(req.params.id);
     const alreadyBought =
       !added &&
       req.session.loginId &&
@@ -182,6 +183,7 @@ router.get("/shopProfile/:id", async (req, res) => {
       shop,
       services,
       goals,
+      cases,
       added,
       alreadyBought
     });
@@ -324,11 +326,19 @@ router.get("/user/settings", checkAuth, async (req, res) => {
  */
 router.get("/dashboard/shop", checkAuth, async (req, res) => {
   try {
-    if (req.session.loginId[0] !== "#")
-      throw `LoginId prefix should be # but is ${req.session.loginId[0]}`;
-    else {
-      const shop = await shops.getProfileInfo(req.session.loginId.slice(1));
-      res.json({ success: true, shop });
+    if (req.session.loginId[0] !== "#") {
+      res.json({
+        success: false,
+        unauthorized: true,
+        message: "Contagiato non autorizzato alla dashboard di un focolaio"
+      });
+    } else {
+      const shopId = req.session.loginId.slice(1);
+      const shop = await shops.getDashboardInfo(shopId);
+      const services = await servicesAndGoals.servicesFromId(shopId);
+      const goals = await servicesAndGoals.goalsFromId(shopId);
+      const cases = await shops.getCases(shopId);
+      res.json({ success: true, shop, services, goals, cases });
     }
   } catch (e) {
     console.log(e);

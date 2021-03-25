@@ -1,3 +1,4 @@
+const formatDates = require("../../functions/formatDates");
 const pool = require("../db");
 
 /** Query to get list
@@ -48,9 +49,36 @@ SELECT
   shop.logourl,
   shop.backgroundurl,
   shop.province,
+  shop.maxpremiums,
   shop.city,
   shop.bio,
   shop.currentprice,
+  shop.initialprice,
+  COALESCE(SUM(info.price), 0) AS financed_so_far,
+  COALESCE(CAST(COUNT(info."user") AS INT), 0) AS total_premiums,
+  COALESCE(CAST(COUNT(CASE WHEN info.type = 'viral' THEN info."user" END) AS INT), 0) AS viral_premiums
+FROM shop LEFT JOIN (premium JOIN "user" ON premium."user" = "user".username) AS info
+  ON shop.id = info.shop
+WHERE shop.id = $1
+GROUP BY shop.id`;
+
+const dashboardQuery = `
+SELECT 
+  shop.id,
+  shop.name,
+  shop.category, 
+  shop.logourl,
+  shop.email,
+  shop.clicks,
+  shop.backgroundurl,
+  shop.province,
+  shop.maxpremiums,
+  shop.city,
+  shop.street,
+  shop.postcode,
+  shop.bio,
+  shop.currentprice,
+  shop.initialprice,
   COALESCE(SUM(info.price), 0) AS financed_so_far,
   COALESCE(CAST(COUNT(info."user") AS INT), 0) AS total_premiums,
   COALESCE(CAST(COUNT(CASE WHEN info.type = 'viral' THEN info."user" END) AS INT), 0) AS viral_premiums
@@ -127,6 +155,19 @@ const shopsQueries = {
     const shop = await pool.query(detaliedInfoQuery, [id]);
     if (shop.rowCount !== 1) throw "Id must be unique and valid";
     else return shop.rows[0];
+  },
+  getDashboardInfo: async id => {
+    const shop = await pool.query(dashboardQuery, [id]);
+    if (shop.rowCount !== 1) throw "Id must be unique and valid";
+    else return shop.rows[0];
+  },
+  /** Returns the list of cases from a shop */
+  getCases: async id => {
+    const cases = await pool.query(
+      "SELECT date FROM premium JOIN transaction ON premium.transactionid = transaction.id WHERE premium.shop = $1",
+      [id]
+    );
+    return formatDates(cases.rows);
   },
   getOldPsw: async id => {
     const shops = await pool.query(

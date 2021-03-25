@@ -3,6 +3,7 @@ const pool = require("../db");
 // query string
 const listQuery = `
 SELECT "user".profileurl,
+       "user".reason,
        "user".username,
        "user".type,
        "user".challenger,
