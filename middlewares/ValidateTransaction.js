@@ -5,7 +5,7 @@ const premiumQueries = require("../db/queries/premiums");
  * - checking that the cart is not empty
  * - getting shop prices from cart
  * - creating a checkout session
- * - DON\T CHECK IF ALREADY BOUGHT AS THAT IS CHECKED ON FRONT_END
+ * - DON'T CHECK IF ALREADY BOUGHT AS THAT IS CHECKED ON FRONT_END
  */
 const validateChallengerTransaction = async (req, res, next) => {
   try {

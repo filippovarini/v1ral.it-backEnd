@@ -168,7 +168,7 @@ const shopsQueries = {
   /** Returns the list of cases from a shop */
   getCases: async id => {
     const cases = await pool.query(
-      "SELECT date FROM premium JOIN transaction ON premium.transactionid = transaction.id WHERE premium.shop = $1",
+      "SELECT transaction_date AS date FROM premium WHERE shop = $1",
       [id]
     );
     return formatDates(cases.rows);

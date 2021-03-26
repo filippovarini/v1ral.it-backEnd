@@ -66,3 +66,28 @@ CREATE TABLE "bug"
     message VARCHAR(256) NOT NULL,
     place VARCHAR(128) NOT NULL
 )
+
+-- product to sell to shops
+CREATE TABLE "product"
+(
+    id SERIAL NOT NULL PRIMARY KEY,
+    name VARCHAR(128) NOT NULL,
+    description VARCHAR(512) NOT NULL,
+    price INTEGER NOT NULL
+)
+
+CREATE TABLE "product_image"
+(
+    product SERIAL NOT NULL,
+    url VARCHAR(512),
+    PRIMARY KEY (product, url)
+)
+
+CREATE TABLE "shop_transaction"
+(
+    shop SERIAL NOT NULL,
+    product SERIAL NOT NULL,
+    date TIMESTAMP NOT NULL,
+    quantity INTEGER,
+    PRIMARY KEY (shop, product)
+)

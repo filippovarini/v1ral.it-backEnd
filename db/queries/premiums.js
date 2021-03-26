@@ -4,33 +4,30 @@ const premiumQueries = {
   /**
    * Insert multiple rows after checkout
    * @param shops contains {id, price}
+   * @param transaction_date date of successful transaction
    */
-  insertFromIds: async (userId, transactionId, shops) => {
+  insertFromIds: async (userId, shops, transaction_date) => {
     let values = "";
     shops.forEach(
       (shop, i) =>
         (values +=
-          (i == 0 ? "" : ", ") +
-          `(${shop.id}, '${userId}', ${shop.price}, ${transactionId})`)
+          (i == 0 ? "" : ", ") + `(${shop.id}, '${userId}', ${shop.price}, $1)`)
     );
     const premiumsQuery = await pool.query(
-      `INSERT INTO premium VALUES ${values} RETURNING *`
+      `INSERT INTO premium VALUES ${values} RETURNING *`,
+      [transaction_date]
     );
     return premiumsQuery.rows;
   },
   /**
-   * Deletes all premiums
+   * Deletes all premiums from a transaction date
+   * @param transaction_date
    */
-  deletePremiums: async premiums => {
-    const shops = [];
-    premiums.forEach(premium => {
-      shops.push(premium.shop);
-    });
+  deleteFromTransactionDate: async transaction_date => {
     await pool.query(
       `DELETE FROM premium
-       WHERE shop = ANY ($1)
-        AND "user" = $2`,
-      [shops, premiums[0].user]
+       WHERE transaction_date = $1`,
+      [transaction_date]
     );
   },
   /** Checks the shops the user is getting premium in have not already been

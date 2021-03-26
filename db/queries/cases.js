@@ -1,25 +1,19 @@
 const formatDates = require("../../functions/formatDates");
 const pool = require("../db");
 
-const totalCasesFromTransactions =
-  "SELECT * FROM transaction WHERE type = 'challenger'";
-const totalCasesFromPremiums =
-  "SELECT date FROM premium JOIN transaction ON premium.transactionid = transaction.id";
-
 const casesQueries = {
   daily: async () => {
     const now = new Date();
     const date = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
     const cases = await pool.query(
-      "SELECT id FROM transaction WHERE date >= $1 AND type = 'challenger'",
+      "SELECT * FROM premium WHERE transaction_date >= $1",
       [date]
     );
     return cases.rowCount;
   },
   total: async () => {
     const cases = await pool.query(
-      // "SELECT CAST(COUNT(id) AS INT) AS number, DATE(date) AS date FROM transaction WHERE type = 'challenger' GROUP BY DATE(date) ORDER BY DATE"
-      totalCasesFromPremiums
+      "SELECT transaction_date AS date FROM premium"
     );
     return formatDates(cases.rows);
   },
@@ -42,9 +36,8 @@ const casesQueries = {
     const cases = await pool.query(
       `
       SELECT * 
-      FROM premium JOIN transaction
-      ON premium.transactionId = transaction.id
-      WHERE transaction.date >= $1`,
+      FROM premium 
+      WHERE transaction_date >= $1`,
       [date]
     );
     return cases.rowCount;

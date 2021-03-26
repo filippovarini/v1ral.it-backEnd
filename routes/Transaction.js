@@ -16,7 +16,7 @@ const userQueries = require("../db/queries/users");
  * (logged in or challenged and has a cart).
  * One done that,
  * - posts stripe tansaction
- * - saves transaction and premiums
+ * - saves premiums with transaction date
  * - if the user is new, creates new user
  * - deletes cart session
  */
@@ -27,15 +27,13 @@ router.post(
   async (req, res) => {
     // post stripe transaction. On success:
     try {
+      const transactionDate = new Date();
+      const transactionId = transactionDate.getTime();
       const userId = req.session.loginId.slice(1);
-      const transactionId = await transactionQueries.postChallengerTrans(
-        req.session.checkout.reduce((acc, shop) => (acc += shop.price), 0),
-        userId
-      );
       await premiumQueries.insertFromIds(
         userId,
-        transactionId,
-        req.session.checkout
+        req.session.checkout,
+        transactionDate
       );
       // remove all session data
       req.session.cart = null;
@@ -45,11 +43,10 @@ router.post(
       res.json({ success: true, transactionId });
     } catch (e) {
       console.log(e);
-      await transactionQueries.deleteTransaction(transactionId);
-      await premiumQueries.deletePremiums(premiums);
+      await premiumQueries.deleteFromTransactionDate(transactionDate);
       if (req.body.newUser) {
         // just created new user
-        await userQueries.delete;
+        await userQueries.delete(req.body.newUser.username);
       }
       res.status(500).json({
         success: false,
