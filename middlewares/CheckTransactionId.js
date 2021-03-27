@@ -5,9 +5,9 @@ const transactionQueries = require("../db/queries/transactions");
  * @param transactionId Is the timestamp of the date object of the transaction */
 const checkTransactionId = async (req, res, next) => {
   try {
-    const transaction = await transactionQueries.getUserTransaction(
-      req.params.transactionId
-    );
+    if (req.session.loginId[0] === "#")
+      await transactionQueries.getShopTransaction(req.params.transactionId);
+    else await transactionQueries.getUserTransaction(req.params.transactionId);
     next();
   } catch (e) {
     console.log(e);

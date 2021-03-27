@@ -85,9 +85,8 @@ CREATE TABLE "product_image"
 
 CREATE TABLE "shop_transaction"
 (
+    date TIMESTAMP NOT NULL,
     shop SERIAL NOT NULL,
     product SERIAL NOT NULL,
-    date TIMESTAMP NOT NULL,
-    quantity INTEGER,
-    PRIMARY KEY (shop, product)
+    PRIMARY KEY(date, shop, product)
 )

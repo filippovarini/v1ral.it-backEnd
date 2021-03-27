@@ -3,7 +3,7 @@ const getFromIds = require("../db/queries/shops").getFromIds;
 /**
  * @todo CHECK THAT THE SHOPS SELECTED HAVE NOT BEEN ALREADY PURCHASED
  */
-const checkCart = async (req, res, next) => {
+const checkUserCart = async (req, res, next) => {
   try {
     if (req.session.cart) {
       const shops = await getFromIds(req.session.cart);
@@ -29,4 +29,4 @@ const checkCart = async (req, res, next) => {
   }
 };
 
-module.exports = checkCart;
+module.exports = checkUserCart;

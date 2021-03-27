@@ -4,10 +4,12 @@ const pool = require("../db/db");
 const router = express.Router();
 
 // middlewares
-const checkCart = require("../middlewares/CheckCart");
+const checkUserCart = require("../middlewares/CheckUserCart");
 const checkTransactionId = require("../middlewares/CheckTransactionId");
 const checkAuth = require("../middlewares/CheckAuth");
 const checkNotAuth = require("../middlewares/CheckNotAuth");
+const checkShop = require("../middlewares/CheckShop");
+const checkShopCart = require("../middlewares/CheckShopCart");
 
 // queries
 const cases = require("../db/queries/cases");
@@ -15,6 +17,7 @@ const shops = require("../db/queries/shops");
 const users = require("../db/queries/users");
 const premiums = require("../db/queries/premiums");
 const servicesAndGoals = require("../db/queries/servicesAndGoals");
+const products = require("../db/queries/products");
 
 // helper functions
 const getUserObject = require("../functions/getUserProfile");
@@ -213,10 +216,10 @@ router.get("/shopProfile/:id", async (req, res) => {
   }
 });
 
-/** Checkout info
+/** User Checkout info
  * sends back shops and whether the user is logged in or has a challenger
  */
-router.get("/checkout", checkCart, async (req, res) => {
+router.get("/checkout/user", checkUserCart, async (req, res) => {
   try {
     const shops = req.shops;
     req.shops = null; // free up req of unnecessary data
@@ -226,6 +229,24 @@ router.get("/checkout", checkCart, async (req, res) => {
     const challenger = req.session.challenger;
     const user = isLogged ? await getUser(req.session.loginId.slice(1)) : null;
     res.json({ success: true, shops, isLogged, challenger, user });
+  } catch (e) {
+    console.log(e);
+    res.json({
+      success: false,
+      error: true,
+      message: "Errore nel recupero delle informazioni sull'utente~"
+    });
+  }
+});
+
+/** Shop Checkout info
+ * sends back shops and whether the user is logged in or has a challenger
+ */
+router.get("/checkout/shop", checkShop, checkShopCart, async (req, res) => {
+  try {
+    const products = req.products;
+    req.products = null; // free up req of unnecessary data
+    res.json({ success: true, products });
   } catch (e) {
     console.log(e);
     res.json({
@@ -358,4 +379,26 @@ router.get("/dashboard/shop", checkAuth, async (req, res) => {
   }
 });
 
+/** Gets items sold for shops' marketing
+ */
+
+router.get("/spread", checkShop, async (req, res) => {
+  try {
+    let productsList = await products.getList();
+    if (req.session.cart)
+      productsList.forEach(
+        product => (product.added = req.session.cart.includes(product.id))
+      );
+    res.json({
+      success: true,
+      products: productsList
+    });
+  } catch (e) {
+    console.log(e);
+    res.json({
+      serverError: true,
+      message: "Errore nel recupero delle informazioni sui prodotti"
+    });
+  }
+});
 module.exports = router;

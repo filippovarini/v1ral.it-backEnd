@@ -5,13 +5,24 @@ const pool = require("../db/db");
 const router = express.Router();
 
 // middlewares
-const checkChallenger = require("../middlewares/CheckChallenger");
+const checkShopCart = require("../middlewares/CheckShopCart");
 const checkAuth = require("../middlewares/CheckAuth");
 const checkUpdatable = require("../middlewares/CheckUpdatable");
+const checkShop = require("../middlewares/CheckShop");
 
 // db queries
 const shopQueries = require("../db/queries/shops");
 const servicesAndGoals = require("../db/queries/servicesAndGoals");
+
+/** Get shop cart
+ * 1. check it is a shop user and that the cart is valid
+ * 2. get checkout info
+ */
+router.get("/cart", checkShop, checkShopCart, (req, res) => {
+  const products = req.products;
+  req.products = null;
+  res.json({ success: true, products });
+});
 
 /** Register shop
  * @param shop object with all new user shop info
@@ -99,6 +110,7 @@ router.post("/login", async (req, res) => {
         const pswMatch = await bcrypt.compare(psw, query.rows[0].psw);
         if (pswMatch) {
           success = true;
+          if (req.session.cart) req.session.cart = null;
           req.session.loginId = `#${query.rows[0].id}`;
           res.json({ success: true, shopUser: query.rows[0].id });
         }
@@ -147,37 +159,6 @@ router.put("/updateSI", (req, res) => {
     res
       .status(500)
       .json({ success: false, serverError: true, message: "Errore interno" });
-  }
-});
-
-/**
- * Select shop to be premium in, by updating cart.
- * Checks that: has a challenger OR has a account already
- * body: shopId
- */
-router.put("/updateCart", checkChallenger, (req, res) => {
-  // Already validated
-  cart = req.session.cart || [];
-  cart.push(req.body.shopId);
-  req.session.cart = cart;
-  res.json({ success: true });
-});
-
-/** Removes from cart
- * @param shopId Id of the shop to be removed from cart
- */
-router.put("/removeFromCart", (req, res) => {
-  if (!req.session.cart)
-    res.json({
-      success: false,
-      cartEmpty: true,
-      message: "Nessun carrello salvato nella sessione"
-    });
-  else {
-    req.session.cart = req.session.cart.filter(
-      shopId => shopId != req.body.shopId
-    );
-    res.json({ success: true });
   }
 });
 

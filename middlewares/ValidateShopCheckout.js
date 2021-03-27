@@ -1,4 +1,4 @@
-const shopQueries = require("../db/queries/shops");
+const productsQueries = require("../db/queries/products");
 
 /** Validates challenger transaction by:
  * - checking that the cart is not empty
@@ -6,7 +6,7 @@ const shopQueries = require("../db/queries/shops");
  * - creating a checkout session
  * - DON'T CHECK IF ALREADY BOUGHT AS THAT IS CHECKED ON FRONT_END
  */
-const validateChallengerTransaction = async (req, res, next) => {
+const ValidateShopCheckout = async (req, res, next) => {
   try {
     if (!req.session.cart || req.session.cart.length === 0)
       res.json({
@@ -16,10 +16,8 @@ const validateChallengerTransaction = async (req, res, next) => {
       });
     else {
       // success. Create checkout session
-      const shops = await shopQueries.getPriceFromIds(req.session.cart);
-      const checkout = shops.map(shop => {
-        return { id: shop.id, price: shop.currentprice };
-      });
+      const products = await productsQueries.getFromIds(req.session.cart);
+      const checkout = products.map(product => product.id);
       req.session.checkout = checkout;
       next();
     }
@@ -33,4 +31,4 @@ const validateChallengerTransaction = async (req, res, next) => {
   }
 };
 
-module.exports = validateChallengerTransaction;
+module.exports = ValidateShopCheckout;
