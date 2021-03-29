@@ -90,3 +90,15 @@ CREATE TABLE "shop_transaction"
     product SERIAL NOT NULL,
     PRIMARY KEY(date, shop, product)
 )
+
+CREATE TABLE "admin"
+(
+    username VARCHAR(32) NOT NULL PRIMARY KEY,
+    psw VARCHAR(256) NOT NULL
+)
+
+CREATE TABLE "website_setting"
+(
+    type VARCHAR(64) NOT NULL PRIMARY KEY,
+    value VARCHAR(64) NOT NULL
+)

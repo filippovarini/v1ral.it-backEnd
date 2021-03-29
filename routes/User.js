@@ -2,14 +2,14 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const pool = require("../db/db");
 
+const router = express.Router();
+
 // middlewares
 const checkAuth = require("../middlewares/CheckAuth");
 const checkUpdatable = require("../middlewares/CheckUpdatable");
 
 // db queries
 const userQueries = require("../db/queries/users");
-
-const router = express.Router();
 
 /* checks if the provided login string is an email */
 const isEmail = login => {

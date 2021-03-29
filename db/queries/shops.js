@@ -1,4 +1,4 @@
-const formatDates = require("../../functions/formatDates");
+const formatDates = require("../../functions/formatDateNumber");
 const pool = require("../db");
 
 /** Query to get list

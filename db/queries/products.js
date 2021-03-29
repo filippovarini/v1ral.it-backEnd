@@ -2,6 +2,30 @@ const pool = require("../db");
 const formatProducts = require("../../functions/formatProducts");
 
 const productsQueries = {
+  /** Insert new product
+   * @param product.images []
+   * @param product with all info
+   */
+  insert: async product => {
+    const { name, price, description, images } = product;
+    const insertedProduct = await pool.query(
+      `
+    INSERT INTO product (name, description, price)
+    VALUES ($1, $2, $3) RETURNING id`,
+      [name, description, price]
+    );
+    let values = "";
+    product.images.forEach(
+      (image, i) => (values += (i == 0 ? "" : ", ") + `($1, '${image}')`)
+    );
+    await pool.query(
+      `
+    INSERT INTO product_image
+    VALUES ${values}`,
+      [insertedProduct.rows[0].id]
+    );
+    return true;
+  },
   getList: async () => {
     const products = await pool.query(`
         SELECT *
@@ -24,6 +48,14 @@ const productsQueries = {
         " but found " +
         formatted.length;
     return formatted;
+  },
+  deleteFromId: async id => {
+    const productId = parseInt(id);
+    await pool.query("DELETE FROM product_image WHERE product = $1", [
+      productId
+    ]);
+    await pool.query("DELETE FROM product WHERE id = $1", [productId]);
+    return true;
   }
 };
 

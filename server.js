@@ -4,6 +4,9 @@ const session = require("express-session");
 const mongoose = require("mongoose");
 const MongoDBSession = require("connect-mongodb-session")(session);
 
+// db queries
+const adminQueries = require("./db/queries/admin");
+
 // multer s3
 // multer upload
 const upload = require("./services/file-upload");
@@ -14,6 +17,7 @@ const userRouter = require("./routes/User");
 const pageRouter = require("./routes/Page");
 const shopRouter = require("./routes/Shop");
 const transactionRouter = require("./routes/Transaction");
+const adminRouter = require("./routes/Admin");
 
 const sessionSecret = require("./keys/dev").session;
 
@@ -56,6 +60,7 @@ app.use("/user", userRouter);
 app.use("/page", pageRouter);
 app.use("/shop", shopRouter);
 app.use("/transaction", transactionRouter);
+app.use("/admin", adminRouter);
 
 app.get("/error", (req, res) => {
   res.send("in server");
@@ -71,6 +76,21 @@ if (process.env.NODE_ENV === "production") {
 
 app.get("/session", (req, res) => {
   res.json({ session: req.session });
+});
+
+/** Checks whether the website is on maintenance */
+app.get("/maintenance", async (req, res) => {
+  try {
+    const status = await adminQueries.getMaintenanceStatus();
+    res.json({ success: true, maintenance: status === "on" });
+  } catch (e) {
+    console.log(e);
+    res.json({
+      serverError: true,
+      message:
+        "Errore nel recuperare le informazioni sullo stato di manutenzione del sito"
+    });
+  }
 });
 
 /** Post any kind of image to s3 and get back an url */
