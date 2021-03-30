@@ -52,7 +52,9 @@ router.get("/header", checkAuth, async (req, res) => {
           success: true,
           name: "@" + user[0].username,
           id: user[0].username,
-          userProfile: user[0].profileurl
+          userProfile: user[0].profileurl,
+          email: user[0].email,
+          address: `${user[0].street}, ${user[0].city}`
         });
         break;
       }
@@ -62,7 +64,9 @@ router.get("/header", checkAuth, async (req, res) => {
           success: true,
           name: "#" + shop[0].name,
           id: shop[0].id,
-          userProfile: shop[0].logourl
+          userProfile: shop[0].logourl,
+          email: shop[0].email,
+          address: `${shop[0].street}, ${shop[0].city}`
         });
         break;
       }

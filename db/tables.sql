@@ -102,3 +102,8 @@ CREATE TABLE "website_setting"
     type VARCHAR(64) NOT NULL PRIMARY KEY,
     value VARCHAR(64) NOT NULL
 )
+
+CREATE TABLE "used_pi"
+(
+    pi_id VARCHAR(256) NOT NULL PRIMARY KEY
+)

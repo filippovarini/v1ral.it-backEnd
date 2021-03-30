@@ -6,7 +6,7 @@ const checkShop = async (req, res, next) => {
     res.json({
       success: false,
       unauthorized: true,
-      message: "Solo i focolai possono vedere la pagina 'diffondi il contagio'"
+      message: "Nessun utente impresa nella sessione"
     });
 };
 

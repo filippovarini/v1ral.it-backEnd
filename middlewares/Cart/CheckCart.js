@@ -1,7 +1,7 @@
 const shopsQueries = require("../../db/queries/shops");
 const productsQueries = require("../../db/queries/products");
 
-/**
+/** Checks that the cart is valid and get cart items
  * @todo CHECK THAT THE SHOPS SELECTED HAVE NOT BEEN ALREADY PURCHASED
  */
 const checkUserCart = async (req, res, next) => {

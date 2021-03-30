@@ -8,27 +8,7 @@ const userQueries = require("../db/queries/users");
  */
 const postUser = async (req, res, next) => {
   if (!req.body.newUser) {
-    if (req.session.loginId) {
-      try {
-        const user = await userQueries.getUnique(req.session.loginId.slice(1));
-        next();
-      } catch (e) {
-        console.log(e);
-        res.status(500).json({
-          success: false,
-          serverError: true,
-          message: "Username non è unico"
-        });
-      }
-    } else {
-      // not authenticated
-      res.json({
-        success: false,
-        unauthorized: true,
-        message:
-          "Nessun account connesso nè informazione valida per creare nuovo account"
-      });
-    }
+    next();
   } else {
     // new user
     const {

@@ -37,9 +37,9 @@ const userQueries = {
   /** Get exact user */
   getUnique: async username => {
     const users = await pool.query(
-      'SELECT username, profileurl\
-      FROM "user"\
-      WHERE LOWER(username) = $1',
+      `SELECT username, profileurl, email, street, city
+      FROM "user"
+      WHERE LOWER(username) = $1`,
       [username]
     );
     if (users.rowCount !== 1)

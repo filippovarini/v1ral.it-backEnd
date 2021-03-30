@@ -1,14 +1,21 @@
 const express = require("express");
+const stripe = require("stripe")(
+  "sk_test_51IagnKBGUp477jqhopdGeyrlKAAK8mafYwfMkY19obFaLciF2LR0b9UjizcwAIhQcN2K2TA37p2EOccHZ7UgkZlo00U6LqNkEM"
+);
 
 const router = express.Router();
 
+const commission = 0.1;
+
+// functions
+const paymentValid = require("../functions/paymentValid");
+
 // middlewares
-const validateCheckout = require("../middlewares/ValidateTransaction");
 const postUser = require("../middlewares/PostUser");
-const validateShopCheckout = require("../middlewares/ValidateShopCheckout");
 const checkShop = require("../middlewares/CheckShop");
 const checkCart = require("../middlewares/Cart/CheckCart");
 const checkCartUpdatable = require("../middlewares/Cart/CheckCartUpdatable");
+const validatePayment = require("../middlewares/ValidatePayment");
 
 // queries
 const premiumQueries = require("../db/queries/premiums");
@@ -25,22 +32,93 @@ router.get("/cart", checkCart, (req, res) => {
   res.json({ success: true, items });
 });
 
-/**
- * Parses the checkout request by checking that the user is allowed for checkout
- * (logged in or challenged and has a cart).
- * One done that,
- * - posts stripe tansaction
+/** Gets intention of payment for user (so a direct payment to a connected
+ * account). Calculates the payment price from cart and sends back client_secret
+ * @param connectedId
+ * @param newUser
+ * @todo handle connected id
+ */
+router.post("/paymentIntent/user", validatePayment, async (req, res) => {
+  try {
+    // total amount asked in cents
+    const total =
+      req.session.checkout.reduce((acc, item) => acc + item.price, 0) * 100;
+
+    const paymentIntent = await stripe.paymentIntents.create(
+      {
+        amount: total,
+        currency: "eur",
+        payment_method_types: ["card"],
+        application_fee_amount: total * commission,
+        // Verify your integration in this guide by including this parameter
+        metadata: { integration_check: "accept_a_payment" }
+      },
+      {
+        stripeAccount: req.body.connectedId
+      }
+    );
+    res.json({
+      success: true,
+      client_secret: paymentIntent.client_secret,
+      intentId: paymentIntent.id
+    });
+  } catch (e) {
+    console.log(e);
+    res.json({
+      serverError: true,
+      stripeError: true,
+      message: "Errore nella creazione della sessione per il checkout"
+    });
+  }
+});
+
+/** Gets intention of payment for shop (so just a normal checkout).
+ * Calculates the payment price from cart and sends back client_secret
+ */
+router.post(
+  "/paymentIntent/shop",
+  checkShop,
+  validatePayment,
+  async (req, res) => {
+    try {
+      // total amount asked in cents
+      const total =
+        req.session.checkout.reduce((acc, item) => acc + item.price, 0) * 100;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: total,
+        currency: "eur",
+        payment_method_types: ["card"],
+        // Verify your integration in this guide by including this parameter
+        metadata: { integration_check: "accept_a_payment" }
+      });
+      res.json({
+        success: true,
+        client_secret: paymentIntent.client_secret,
+        intentId: paymentIntent.id
+      });
+    } catch (e) {
+      console.log(e);
+      res.json({
+        serverError: true,
+        stripeError: true,
+        message: "Errore nella creazione della sessione per il checkout"
+      });
+    }
+  }
+);
+
+/** Saves user transaction details
+ * - checks that the payment intent id is correct and not already used
  * - saves premiums with transaction date
  * - if the user is new, creates new user
  * - deletes cart session
+ * @param intentId
+ * @param newUser
  */
-router.post(
-  "/challengerCheckout",
-  validateCheckout,
-  postUser,
-  async (req, res) => {
-    // post stripe transaction. On success:
-    try {
+router.post("/paymentSuccess/user", postUser, async (req, res) => {
+  try {
+    const paymentAuthenticated = paymentValid(req.body.intentId);
+    if (paymentAuthenticated) {
       const transactionDate = new Date();
       const transactionId = transactionDate.getTime();
       const userId = req.session.loginId.slice(1);
@@ -55,36 +133,43 @@ router.post(
       req.session.shopSI = null;
       req.session.challenger = null;
       res.json({ success: true, transactionId });
-    } catch (e) {
-      console.log(e);
-      await premiumQueries.deleteFromTransactionDate(transactionDate);
+    } else {
       if (req.body.newUser) {
         // just created new user
         await userQueries.delete(req.body.newUser.username);
       }
-      res.status(500).json({
+      res.json({
         success: false,
-        serverError: true,
-        message:
-          "Errore nel salvataggio dei dati relativi alla transizione. " +
-          "Abbiamo dovuto resettare i dati. Ti consigliamo di riprovare. " +
-          "Se continui ad avere problemi, non esitare a contattarci!"
+        intentIdInvalid: true,
+        message: "Pagamento non valido!"
       });
     }
+  } catch (e) {
+    console.log(e);
+    await premiumQueries.deleteFromTransactionDate(transactionDate);
+    if (req.body.newUser) {
+      // just created new user
+      await userQueries.delete(req.body.newUser.username);
+    }
+    res.status(500).json({
+      success: false,
+      serverError: true,
+      message: "Errore nel salvataggio dei dati relativi alla transazione"
+    });
   }
-);
+});
 
-/** Parses the checkout request by a shop user
- * - posts stripe transaction
- * - saves on shop transaction
+/** Saves user transaction details
+ * - checks that the payment intent id is correct and not already used
+ * - saves shop transaction
+ * @param intentId
  */
-router.post(
-  "/shopCheckout",
-  checkShop,
-  validateShopCheckout,
-  async (req, res) => {
-    // post stripe transaction
-    try {
+router.post("/paymentSuccess/shop", checkShop, checkShop, async (req, res) => {
+  console.log("success");
+  // post stripe transaction
+  try {
+    const paymentAuthenticated = paymentValid(req.body.intentId);
+    if (paymentAuthenticated) {
       const transactionDate = new Date();
       const transactionId = transactionDate.getTime();
       const shopId = req.session.loginId.slice(1);
@@ -99,26 +184,32 @@ router.post(
       req.session.shopSI = null;
       req.session.challenger = null;
       res.json({ success: true, transactionId });
-    } catch (e) {
-      // delete transaction
-      transactionQueries.deleteFromTransactionId(transactionId);
-      console.log(e);
+    } else {
       res.json({
         success: false,
-        serverError: true,
-        message:
-          "Errore nel salvataggio dei dati relativi alla transizione. " +
-          "Abbiamo dovuto resettare i dati. Ti consigliamo di riprovare. " +
-          "Se continui ad avere problemi, non esitare a contattarci!"
+        intentIdInvalid: true,
+        message: "Pagamento non valido!"
       });
     }
+  } catch (e) {
+    // delete transaction
+    transactionQueries.deleteFromTransactionId(transactionId);
+    console.log(e);
+    res.json({
+      success: false,
+      serverError: true,
+      message:
+        "Errore nel salvataggio dei dati relativi alla transizione. " +
+        "Abbiamo dovuto resettare i dati. Ti consigliamo di riprovare. " +
+        "Se continui ad avere problemi, non esitare a contattarci!"
+    });
   }
-);
+});
 
 /**
  * Add items to the cart. Check that the user doing this action is allowed to do
  * that
- * body: item
+ * @param item
  */
 router.put("/cart", checkCartUpdatable, (req, res) => {
   // Already validated
