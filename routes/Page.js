@@ -135,6 +135,22 @@ router.get("/home/users", async (req, res) => {
   }
 });
 
+/** Gets price increase of shops */
+router.get("/home/priceIncrease", async (_, res) => {
+  try {
+    const shops = await pool.query(
+      "SELECT currentprice, initialprice, name, logourl FROM shop"
+    );
+    res.json({ success: true, shops: shops.rows });
+  } catch (e) {
+    console.log(e);
+    res.json({
+      serverError: true,
+      message: "Errore nel recuperare l'amuento del valore delle varie imprese"
+    });
+  }
+});
+
 /** Shop search results */
 /** Accessible even without any search identifier */
 router.get("/shops", async (req, res) => {
