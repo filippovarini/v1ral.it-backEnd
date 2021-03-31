@@ -21,6 +21,7 @@ const products = require("../db/queries/products");
 
 // helper functions
 const getUserObject = require("../functions/getUserProfile");
+const checkChargesEnabled = require("../functions/connectChargesEnabled");
 /** Checks if the user viewing the shop has should see it as added or not */
 const isInCart = (session, shopId) => {
   return session.cart && session.cart.includes(shopId);
@@ -387,7 +388,8 @@ router.get("/dashboard/shop", checkAuth, async (req, res) => {
       const services = await servicesAndGoals.servicesFromId(shopId);
       const goals = await servicesAndGoals.goalsFromId(shopId);
       const cases = await shops.getCases(shopId);
-      res.json({ success: true, shop, services, goals, cases });
+      const chargesEnabled = await checkChargesEnabled(shop.connectedid);
+      res.json({ success: true, shop, services, goals, cases, chargesEnabled });
     }
   } catch (e) {
     console.log(e);

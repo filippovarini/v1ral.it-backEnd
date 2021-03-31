@@ -79,6 +79,7 @@ SELECT
   shop.bio,
   shop.currentprice,
   shop.initialprice,
+  shop.connectedid,
   COALESCE(SUM(info.price), 0) AS financed_so_far,
   COALESCE(CAST(COUNT(info."user") AS INT), 0) AS total_premiums,
   COALESCE(CAST(COUNT(CASE WHEN info.type = 'viral' THEN info."user" END) AS INT), 0) AS viral_premiums
@@ -224,7 +225,7 @@ const shopsQueries = {
         province,
         street,
         postcode,
-        connectedId ,
+        connectedid ,
         backgroundURL,
         logoURL,
         psw)
