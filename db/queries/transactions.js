@@ -54,12 +54,14 @@ const transactionQueries = {
     products.forEach(
       (product, i) =>
         (values +=
-          (i == 0 ? "" : ", ") + `($1, ${parseInt(shopId)}, ${product})`)
+          (i == 0 ? "" : ", ") +
+          `($1, ${parseInt(shopId)}, ${product.id}, ${product.price})`)
     );
     const premiumsQuery = await pool.query(
       `INSERT INTO shop_transaction VALUES ${values} RETURNING *`,
       [date]
     );
+    console.log(premiumsQuery.rows);
     return premiumsQuery.rows;
   },
   deleteFromTransactionId: async transactionId => {

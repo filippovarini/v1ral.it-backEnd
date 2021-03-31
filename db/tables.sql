@@ -88,6 +88,7 @@ CREATE TABLE "shop_transaction"
     date TIMESTAMP NOT NULL,
     shop SERIAL NOT NULL,
     product SERIAL NOT NULL,
+    price_then INTEGER NOT NULL,
     PRIMARY KEY(date, shop, product)
 )
 

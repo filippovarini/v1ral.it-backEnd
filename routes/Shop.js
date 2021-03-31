@@ -4,6 +4,9 @@ const pool = require("../db/db");
 
 const router = express.Router();
 
+// functions
+const checkChargesEnabled = require("../functions/connectChargesEnabled");
+
 // middlewares
 const checkShopCart = require("../middlewares/CheckShopCart");
 const checkAuth = require("../middlewares/CheckAuth");
@@ -24,62 +27,99 @@ router.get("/cart", checkShop, checkShopCart, (req, res) => {
   res.json({ success: true, products });
 });
 
-/** Register shop
- * @param shop object with all new user shop info
- * @param goals goals to insert
- * @param services services to insert
+/** Register shop from registerSession saved before connecting account.
+ * Also check that the account id passed to get to the shop/register/done/:id
+ * page is valid
+ * @param connectedId id of new connected account passed as query param in shop/
+ * register/done/:id
  */
 router.post("/register", async (req, res) => {
-  const {
-    name,
-    category,
-    maxPremiums,
-    initialPrice,
-    currentPrice,
-    clicks,
-    bio,
-    email,
-    city,
-    province,
-    street,
-    postcode,
-    connectedId,
-    backgroundurl,
-    logourl,
-    psw
-  } = req.body.shop;
   try {
-    const hashed = await bcrypt.hash(psw, 10);
-    const newShopUser = await shopQueries.register([
-      name,
-      category,
-      maxPremiums,
-      initialPrice,
-      currentPrice,
-      clicks,
-      bio,
-      email,
-      city,
-      province,
-      street,
-      postcode,
-      connectedId,
-      backgroundurl,
-      logourl,
-      hashed
-    ]);
-    await servicesAndGoals.insertMultipleServices(
-      newShopUser.id,
-      req.body.services
-    );
-    await servicesAndGoals.insertMultipleGoals(newShopUser.id, req.body.goals);
-    req.session.loginId = `#${newShopUser.id}`;
-    res.json({
-      success: true,
-      id: newShopUser.id,
-      name: newShopUser.name,
-      userProfile: newShopUser.logourl
-    });
+    const registerSession = req.session.registerSession;
+    if (
+      registerSession &&
+      registerSession.shop &&
+      registerSession.services &&
+      registerSession.goals &&
+      registerSession.shop.connectedId === req.body.connectedId
+    ) {
+      const {
+        name,
+        category,
+        maxPremiums,
+        initialPrice,
+        currentPrice,
+        clicks,
+        bio,
+        email,
+        city,
+        province,
+        street,
+        postcode,
+        connectedId,
+        backgroundurl,
+        logourl,
+        psw
+      } = registerSession.shop;
+
+      const hashed = await bcrypt.hash(psw, 10);
+      const newShopUser = await shopQueries.register([
+        name,
+        category,
+        maxPremiums,
+        initialPrice,
+        currentPrice,
+        clicks,
+        bio,
+        email,
+        city,
+        province,
+        street,
+        postcode,
+        connectedId,
+        backgroundurl,
+        logourl,
+        hashed
+      ]);
+      await servicesAndGoals.insertMultipleServices(
+        newShopUser.id,
+        registerSession.services
+      );
+      await servicesAndGoals.insertMultipleGoals(
+        newShopUser.id,
+        registerSession.goals
+      );
+      // check charges enabled
+      const chargesEnabled = await checkChargesEnabled(req.body.connectedId);
+      req.session.loginId = `#${newShopUser.id}`;
+      req.session.registerSession = null;
+      res.json({
+        success: true,
+        id: newShopUser.id,
+        name: newShopUser.name,
+        address: `${newShopUser.street}, ${newShopUser.city}`,
+        email: newShopUser.email,
+        userProfile: newShopUser.logourl,
+        chargesEnabled
+      });
+    } else {
+      // no registerSession
+      const connectedUsers = await pool.query(
+        "SELECT * FROM shop WHERE connectedId = $1",
+        [req.body.connectedId]
+      );
+      if (connectedUsers.rowCount !== 0) {
+        const chargesEnabled = await checkChargesEnabled(req.body.connectedId);
+        res.json({ success: true, alreadyPresent: true, chargesEnabled });
+      } else
+        res.json({
+          success: false,
+          serverError: false,
+          unauthorized: true,
+          message:
+            "Accesso negato perchè non esiste una sessione di registrazione oppure l'id dello stripe account è invalido"
+        });
+    }
   } catch (e) {
     console.log(e);
     res.status(500).json({

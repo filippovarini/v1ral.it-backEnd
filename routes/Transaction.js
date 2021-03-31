@@ -6,9 +6,10 @@ const stripe = require("stripe")(
 const router = express.Router();
 
 const commission = 0.1;
+const accountType = "express";
 
 // functions
-const paymentValid = require("../functions/paymentValid");
+const checkChargesEnabled = require("../functions/connectChargesEnabled");
 
 // middlewares
 const postUser = require("../middlewares/PostUser");
@@ -16,6 +17,7 @@ const checkShop = require("../middlewares/CheckShop");
 const checkCart = require("../middlewares/Cart/CheckCart");
 const checkCartUpdatable = require("../middlewares/Cart/CheckCartUpdatable");
 const validatePayment = require("../middlewares/ValidatePayment");
+const ChecknItentSucceeded = require("../middlewares/ChecknItentSucceeded");
 
 // queries
 const premiumQueries = require("../db/queries/premiums");
@@ -30,6 +32,44 @@ router.get("/cart", checkCart, (req, res) => {
   const items = req.items;
   req.items = null;
   res.json({ success: true, items });
+});
+
+/** Check if the charges are enabled */
+router.get("/chargesEnabled/:connectedId", async (req, res) => {
+  try {
+    const chargesEnabled = await checkChargesEnabled(req.params.connectedId);
+    res.json({ success: true, chargesEnabled });
+  } catch (e) {
+    console.log(e);
+    res.json({
+      serverError: true,
+      message: "Errore nel controllo di chargesEnabled"
+    });
+  }
+});
+
+/** Gets link for dashboard
+ * @param redirectPath path where to redirect
+ * @param connectedId
+ */
+router.post("/dashboard", async (req, res) => {
+  try {
+    const redirect_url =
+      process.env.NODE_ENV === "production"
+        ? `https://v1ral.it/${req.body.redirectPath}`
+        : `http://localhost:3000/${req.body.redirectPath}`;
+
+    const link = await stripe.accounts.createLoginLink(req.body.connectedId, {
+      redirect_url
+    });
+    res.json({ success: true, url: link.url });
+  } catch (e) {
+    console.log(e);
+    res.json({
+      serverError: true,
+      message: "Errore nel recupero del link per la dashboard di stripe"
+    });
+  }
 });
 
 /** Gets intention of payment for user (so a direct payment to a connected
@@ -117,7 +157,7 @@ router.post(
  */
 router.post("/paymentSuccess/user", postUser, async (req, res) => {
   try {
-    const paymentAuthenticated = paymentValid(req.body.intentId);
+    const paymentAuthenticated = false;
     if (paymentAuthenticated) {
       const transactionDate = new Date();
       const transactionId = transactionDate.getTime();
@@ -164,44 +204,82 @@ router.post("/paymentSuccess/user", postUser, async (req, res) => {
  * - saves shop transaction
  * @param intentId
  */
-router.post("/paymentSuccess/shop", checkShop, checkShop, async (req, res) => {
-  console.log("success");
-  // post stripe transaction
-  try {
-    const paymentAuthenticated = paymentValid(req.body.intentId);
-    if (paymentAuthenticated) {
-      const transactionDate = new Date();
-      const transactionId = transactionDate.getTime();
-      const shopId = req.session.loginId.slice(1);
+router.post(
+  "/paymentSuccess/shop",
+  checkShop,
+  ChecknItentSucceeded,
+  async (req, res) => {
+    // post stripe transaction
+    const transactionDate = new Date();
+    const transactionId = transactionDate.getTime();
+    const shopId = req.session.loginId.slice(1);
+    try {
       await transactionQueries.insertFromIds(
         shopId,
         transactionDate,
         req.session.checkout
       );
-      // remove all session data
       req.session.cart = null;
       req.session.checkout = null;
       req.session.shopSI = null;
       req.session.challenger = null;
       res.json({ success: true, transactionId });
-    } else {
+    } catch (e) {
+      // delete transaction
+      console.log(e);
+      transactionQueries.deleteFromTransactionId(transactionId);
       res.json({
         success: false,
-        intentIdInvalid: true,
-        message: "Pagamento non valido!"
+        serverError: true,
+        message:
+          "Errore nel salvataggio dei dati relativi alla transizione. " +
+          "Abbiamo dovuto resettare i dati. Ti consigliamo di riprovare. " +
+          "Se continui ad avere problemi, non esitare a contattarci!"
       });
     }
+  }
+);
+
+/** Store new shop user in a register session and create connected account,
+ * sending back the new link
+ * @param registerSession {shop, goals, services}
+ * @todo pre-compile business profile
+ */
+router.post("/connect", async (req, res) => {
+  try {
+    console.log("connecting");
+    req.session.registerSession = req.body.registerSession;
+    const account = await stripe.accounts.create({
+      type: accountType,
+      country: "IT",
+      default_currency: "EUR"
+    });
+
+    req.session.registerSession.shop.connectedId = account.id;
+
+    const refresh_url =
+      process.env.NODE_ENV === "production"
+        ? `https://www.v1ral.it/shop/register/getPayed`
+        : `http://localhost:3000/shop/register/getPayed`;
+
+    const return_url =
+      process.env.NODE_ENV === "production"
+        ? `https://www.v1ral.it/shop/register/done/${account.id}`
+        : `http://localhost:3000/shop/register/done/${account.id}`;
+
+    const accountLinks = await stripe.accountLinks.create({
+      account: account.id,
+      refresh_url,
+      return_url,
+      type: "account_onboarding"
+    });
+
+    res.json({ success: true, url: accountLinks.url });
   } catch (e) {
-    // delete transaction
-    transactionQueries.deleteFromTransactionId(transactionId);
     console.log(e);
     res.json({
-      success: false,
       serverError: true,
-      message:
-        "Errore nel salvataggio dei dati relativi alla transizione. " +
-        "Abbiamo dovuto resettare i dati. Ti consigliamo di riprovare. " +
-        "Se continui ad avere problemi, non esitare a contattarci!"
+      message: "Errore nel connected account onboarding"
     });
   }
 });
@@ -234,6 +312,13 @@ router.delete("/cart", (req, res) => {
     req.session.cart = req.session.cart.filter(item => item != req.body.item);
     res.json({ success: true });
   }
+});
+
+router.get("/intent", async (req, res) => {
+  const intent = await stripe.paymentIntents.retrieve(
+    "pi_1Iai7mBGUp477jqhqypV4gBP"
+  );
+  res.send(intent.status);
 });
 
 module.exports = router;

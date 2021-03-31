@@ -7,6 +7,9 @@ const paymentQueries = {
       id
     ]);
     return results.rowCount !== 0;
+  },
+  insertIntent: async intentId => {
+    await pool.query("INSERT INTO used_pi VALUES ($1)", [intentId]);
   }
 };
 
