@@ -11,7 +11,6 @@ const intentSucceeded = async (req, res, next) => {
     let intentValid = false;
     const intent = await stripe.paymentIntents.retrieve(req.body.intentId);
     if (intent.status === "succeeded") {
-      console.log("intent succeeded");
       // check that it has not been already used
       const intentAlreadyUsed = await paymentQueries.alreadyUsed(
         req.body.intentId
@@ -19,7 +18,10 @@ const intentSucceeded = async (req, res, next) => {
       intentValid = !intentAlreadyUsed;
     }
     if (intentValid) {
-      console.log("everything valid! going to post user");
+      const chargeId = intent.charges.data.filter(
+        charge => charge.status === "succeeded"
+      )[0].id;
+      req.session.chargeId = chargeId;
       paymentQueries.insertIntent(req.body.intentId);
       next();
     } else {

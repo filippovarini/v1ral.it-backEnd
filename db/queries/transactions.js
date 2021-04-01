@@ -69,7 +69,6 @@ const transactionQueries = {
       `INSERT INTO shop_transaction VALUES ${values} RETURNING *`,
       [date]
     );
-    console.log(premiumsQuery.rows);
     return premiumsQuery.rows;
   },
   deleteFromTransactionId: async transactionId => {

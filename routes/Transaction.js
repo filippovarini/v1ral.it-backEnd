@@ -5,9 +5,8 @@ const stripe = require("stripe")(
 
 const router = express.Router();
 
-const commission = 0.1;
-const shipAgainPrice = 5 * 100;
-const accountType = "express";
+const SHIP_AGAIN_PRICE = require("../statics").shipAgainPrice;
+const CONNECTED_ACCOUNT_TYPE = require("../statics").connectedAccountType;
 
 // functions
 const checkChargesEnabled = require("../functions/connectChargesEnabled");
@@ -19,6 +18,7 @@ const checkCart = require("../middlewares/Cart/CheckCart");
 const checkCartUpdatable = require("../middlewares/Cart/CheckCartUpdatable");
 const validatePayment = require("../middlewares/ValidatePayment");
 const ChecknItentSucceeded = require("../middlewares/ChecknItentSucceeded");
+const sendTransfer = require("../middlewares/Transactions/SendTransfers");
 
 // queries
 const premiumQueries = require("../db/queries/premiums");
@@ -75,21 +75,16 @@ router.post("/dashboard", async (req, res) => {
 
 /** Gets intention of payment for user (so a direct payment to a connected
  * account). Calculates the payment price from cart and sends back client_secret
+ * Create separate transfers for connected accounts. Send back transfer_group
  * @param shipAgain whether to add the shipAgain price
- * @todo handle connected id
  */
 router.post("/paymentIntent/user", validatePayment, async (req, res) => {
-  console.log("PAYMENT INTENT");
   try {
     // total amount asked in cents
     let total =
       req.session.checkout.reduce((acc, item) => acc + item.price, 0) * 100;
-    if (req.body.shipAgain) total += shipAgainPrice;
+    if (req.body.shipAgain) total += SHIP_AGAIN_PRICE;
     const transferGroupId = String(new Date().getTime());
-    console.log(transferGroupId);
-
-    console.log(total);
-    console.log(req.session);
     const paymentIntent = await stripe.paymentIntents.create({
       amount: total,
       currency: "eur",
@@ -98,44 +93,20 @@ router.post("/paymentIntent/user", validatePayment, async (req, res) => {
       // Verify your integration in this guide by including this parameter
       metadata: { integration_check: "accept_a_payment" }
     });
-
-    for (const checkout of req.session.checkout) {
-      console.log(checkout);
-      const total = Math.floor(checkout.price * 100 * (1 - commission));
-      console.log(total);
-      const transfer = await stripe.transfers.create({
-        amount: total,
-        currency: "eur",
-        destination: checkout.connectedId,
-        transfer_group: transferGroupId
-      });
-      console.log(transfer);
-    }
-
-    console.log("everything done");
-
-    // console.log(paymentIntent);
-
-    // res.json({
-    //   success: true,
-    //   client_secret: paymentIntent.client_secret,
-    //   intentId: paymentIntent.id
-    // });
+    console.log("payment intent completed");
+    res.json({
+      success: true,
+      client_secret: paymentIntent.client_secret,
+      intentId: paymentIntent.id,
+      transferGroupId
+    });
   } catch (e) {
     console.log(e);
-    if (e.code === "balance_insufficient") {
-      res.json({
-        serverError: true,
-        stripeError: true,
-        insufficientBalance: true,
-        message: "Errore nella creazione della sessione per il checkout"
-      });
-    } else
-      res.json({
-        serverError: true,
-        stripeError: true,
-        message: "Errore nella creazione della sessione per il checkout"
-      });
+    res.json({
+      serverError: true,
+      stripeError: true,
+      message: "Errore nella creazione della sessione per il checkout"
+    });
   }
 });
 
@@ -176,18 +147,21 @@ router.post(
 
 /** Saves user transaction details
  * - checks that the payment intent id is correct and not already used
- * - saves premiums with transaction date
  * - if the user is new, creates new user
+ * - creates transfers to the connected accounts
+ * - saves premiums with transaction date
  * - deletes cart session
  * @param intentId
  * @param newUser
+ * @param transferGroupId
  */
 router.post(
   "/paymentSuccess/user",
   ChecknItentSucceeded,
+  sendTransfer,
   postUser,
   async (req, res) => {
-    console.log("middlewares completed");
+    console.log("Every middleware completed with success!!!!!");
     const transactionDate = new Date();
     const transactionId = transactionDate.getTime();
     const userId = req.session.loginId.slice(1);
@@ -240,6 +214,7 @@ router.post(
         req.session.checkout
       );
       req.session.cart = null;
+      req.session.chargeId = null;
       req.session.checkout = null;
       req.session.shopSI = null;
       req.session.challenger = null;
@@ -270,7 +245,7 @@ router.post("/connect", async (req, res) => {
     console.log("connecting");
     req.session.registerSession = req.body.registerSession;
     const account = await stripe.accounts.create({
-      type: accountType,
+      type: CONNECTED_ACCOUNT_TYPE,
       country: "IT",
       default_currency: "EUR"
     });

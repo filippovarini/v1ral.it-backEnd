@@ -11,8 +11,7 @@ const sendRecoverPasswrodEmail = async (newPsw, email) => {
   };
 
   try {
-    const response = await mailgun.messages().send(data);
-    console.log(response);
+    await mailgun.messages().send(data);
     return true;
   } catch (e) {
     console.log(`Error with email: ${email}`);
