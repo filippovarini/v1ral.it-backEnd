@@ -18,6 +18,7 @@ const pageRouter = require("./routes/Page");
 const shopRouter = require("./routes/Shop");
 const transactionRouter = require("./routes/Transaction");
 const adminRouter = require("./routes/Admin");
+const generalUserRouter = require("./routes/GeneralUser");
 
 const sessionSecret = require("./keys/dev").session;
 
@@ -61,6 +62,7 @@ app.use("/page", pageRouter);
 app.use("/shop", shopRouter);
 app.use("/transaction", transactionRouter);
 app.use("/admin", adminRouter);
+app.use("/users", generalUserRouter);
 
 app.get("/error", (req, res) => {
   res.send("in server");
