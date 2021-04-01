@@ -18,6 +18,7 @@ const users = require("../db/queries/users");
 const premiums = require("../db/queries/premiums");
 const servicesAndGoals = require("../db/queries/servicesAndGoals");
 const products = require("../db/queries/products");
+const transactions = require("../db/queries/transactions");
 
 // helper functions
 const getUserObject = require("../functions/getUserProfile");
@@ -388,8 +389,19 @@ router.get("/dashboard/shop", checkAuth, async (req, res) => {
       const services = await servicesAndGoals.servicesFromId(shopId);
       const goals = await servicesAndGoals.goalsFromId(shopId);
       const cases = await shops.getCases(shopId);
+      const totalSpent = await transactions.getShopTransactionTotal(
+        req.session.loginId.slice(1)
+      );
       const chargesEnabled = await checkChargesEnabled(shop.connectedid);
-      res.json({ success: true, shop, services, goals, cases, chargesEnabled });
+      res.json({
+        success: true,
+        shop,
+        services,
+        goals,
+        cases,
+        chargesEnabled,
+        totalSpent
+      });
     }
   } catch (e) {
     console.log(e);

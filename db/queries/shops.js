@@ -199,7 +199,7 @@ const shopsQueries = {
   /** Gets maps price to id */
   getPriceFromIds: async ids => {
     const shops = await pool.query(
-      "SELECT id, currentprice FROM shop WHERE id = ANY ($1)",
+      "SELECT id, currentprice, connectedid FROM shop WHERE id = ANY ($1)",
       [ids]
     );
     if (shops.rowCount !== ids.length)

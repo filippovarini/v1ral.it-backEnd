@@ -23,7 +23,11 @@ const validatePayment = async (req, res, next) => {
           ? await productsQueries.getFromIds(req.session.cart)
           : await shopQueries.getPriceFromIds(req.session.cart);
       const checkout = cartItems.map(item => {
-        return { id: item.id, price: item.currentprice || item.price };
+        return {
+          id: item.id,
+          price: item.currentprice || item.price,
+          connectedId: item.connectedid
+        };
       });
       req.session.checkout = checkout;
       next();

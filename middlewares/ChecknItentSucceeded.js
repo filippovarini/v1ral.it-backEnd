@@ -3,11 +3,15 @@ const stripe = require("stripe")(
 );
 const paymentQueries = require("../db/queries/payments");
 
+/** Check that the intent id is valid and that the intent is succeeded
+ * @param intentId
+ */
 const intentSucceeded = async (req, res, next) => {
   try {
     let intentValid = false;
     const intent = await stripe.paymentIntents.retrieve(req.body.intentId);
     if (intent.status === "succeeded") {
+      console.log("intent succeeded");
       // check that it has not been already used
       const intentAlreadyUsed = await paymentQueries.alreadyUsed(
         req.body.intentId
@@ -15,6 +19,7 @@ const intentSucceeded = async (req, res, next) => {
       intentValid = !intentAlreadyUsed;
     }
     if (intentValid) {
+      console.log("everything valid! going to post user");
       paymentQueries.insertIntent(req.body.intentId);
       next();
     } else {

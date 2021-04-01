@@ -6,6 +6,7 @@ const stripe = require("stripe")(
 const router = express.Router();
 
 const commission = 0.1;
+const shipAgainPrice = 5 * 100;
 const accountType = "express";
 
 // functions
@@ -74,41 +75,67 @@ router.post("/dashboard", async (req, res) => {
 
 /** Gets intention of payment for user (so a direct payment to a connected
  * account). Calculates the payment price from cart and sends back client_secret
- * @param connectedId
- * @param newUser
+ * @param shipAgain whether to add the shipAgain price
  * @todo handle connected id
  */
 router.post("/paymentIntent/user", validatePayment, async (req, res) => {
+  console.log("PAYMENT INTENT");
   try {
     // total amount asked in cents
-    const total =
+    let total =
       req.session.checkout.reduce((acc, item) => acc + item.price, 0) * 100;
+    if (req.body.shipAgain) total += shipAgainPrice;
+    const transferGroupId = String(new Date().getTime());
+    console.log(transferGroupId);
 
-    const paymentIntent = await stripe.paymentIntents.create(
-      {
+    console.log(total);
+    console.log(req.session);
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: total,
+      currency: "eur",
+      payment_method_types: ["card"],
+      transfer_group: transferGroupId,
+      // Verify your integration in this guide by including this parameter
+      metadata: { integration_check: "accept_a_payment" }
+    });
+
+    for (const checkout of req.session.checkout) {
+      console.log(checkout);
+      const total = Math.floor(checkout.price * 100 * (1 - commission));
+      console.log(total);
+      const transfer = await stripe.transfers.create({
         amount: total,
         currency: "eur",
-        payment_method_types: ["card"],
-        application_fee_amount: total * commission,
-        // Verify your integration in this guide by including this parameter
-        metadata: { integration_check: "accept_a_payment" }
-      },
-      {
-        stripeAccount: req.body.connectedId
-      }
-    );
-    res.json({
-      success: true,
-      client_secret: paymentIntent.client_secret,
-      intentId: paymentIntent.id
-    });
+        destination: checkout.connectedId,
+        transfer_group: transferGroupId
+      });
+      console.log(transfer);
+    }
+
+    console.log("everything done");
+
+    // console.log(paymentIntent);
+
+    // res.json({
+    //   success: true,
+    //   client_secret: paymentIntent.client_secret,
+    //   intentId: paymentIntent.id
+    // });
   } catch (e) {
     console.log(e);
-    res.json({
-      serverError: true,
-      stripeError: true,
-      message: "Errore nella creazione della sessione per il checkout"
-    });
+    if (e.code === "balance_insufficient") {
+      res.json({
+        serverError: true,
+        stripeError: true,
+        insufficientBalance: true,
+        message: "Errore nella creazione della sessione per il checkout"
+      });
+    } else
+      res.json({
+        serverError: true,
+        stripeError: true,
+        message: "Errore nella creazione della sessione per il checkout"
+      });
   }
 });
 
@@ -155,13 +182,16 @@ router.post(
  * @param intentId
  * @param newUser
  */
-router.post("/paymentSuccess/user", postUser, async (req, res) => {
-  try {
-    const paymentAuthenticated = false;
-    if (paymentAuthenticated) {
-      const transactionDate = new Date();
-      const transactionId = transactionDate.getTime();
-      const userId = req.session.loginId.slice(1);
+router.post(
+  "/paymentSuccess/user",
+  ChecknItentSucceeded,
+  postUser,
+  async (req, res) => {
+    console.log("middlewares completed");
+    const transactionDate = new Date();
+    const transactionId = transactionDate.getTime();
+    const userId = req.session.loginId.slice(1);
+    try {
       await premiumQueries.insertFromIds(
         userId,
         req.session.checkout,
@@ -173,31 +203,21 @@ router.post("/paymentSuccess/user", postUser, async (req, res) => {
       req.session.shopSI = null;
       req.session.challenger = null;
       res.json({ success: true, transactionId });
-    } else {
+    } catch (e) {
+      console.log(e);
+      await premiumQueries.deleteFromTransactionDate(transactionDate);
       if (req.body.newUser) {
         // just created new user
         await userQueries.delete(req.body.newUser.username);
       }
-      res.json({
+      res.status(500).json({
         success: false,
-        intentIdInvalid: true,
-        message: "Pagamento non valido!"
+        serverError: true,
+        message: "Errore nel salvataggio dei dati relativi alla transazione"
       });
     }
-  } catch (e) {
-    console.log(e);
-    await premiumQueries.deleteFromTransactionDate(transactionDate);
-    if (req.body.newUser) {
-      // just created new user
-      await userQueries.delete(req.body.newUser.username);
-    }
-    res.status(500).json({
-      success: false,
-      serverError: true,
-      message: "Errore nel salvataggio dei dati relativi alla transazione"
-    });
   }
-});
+);
 
 /** Saves user transaction details
  * - checks that the payment intent id is correct and not already used

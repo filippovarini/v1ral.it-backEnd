@@ -26,6 +26,14 @@ const transactionQueries = {
     if (transaction.rowCount < 1) throw "Transaction id is not valid.";
     else return transaction.rows[0];
   },
+  /** Get total spent by a shop */
+  getShopTransactionTotal: async shopId => {
+    const total = await pool.query(
+      "SELECT COALESCE(SUM(price_then), 0) AS total FROM shop_transaction WHERE shop = $1",
+      [shopId]
+    );
+    return total.rows[0].total;
+  },
   /** Gets marketing products bought by a shop
    * @return [products]
    */
