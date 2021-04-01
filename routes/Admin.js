@@ -27,6 +27,9 @@ router.get("/home", checkAdmin, async (req, res) => {
     const shopOrders = await adminQueries.getShopOrders();
     const products = await productQueries.getList();
     const admins = await adminQueries.getAdminList();
+    const bugs = await pool.query(
+      "SELECT * FROM bug WHERE status = 'unchecked'"
+    );
     const maintenanceStatus = await adminQueries.getMaintenanceStatus();
     res.json({
       success: true,
@@ -40,7 +43,8 @@ router.get("/home", checkAdmin, async (req, res) => {
       challengerOrders,
       products,
       admins,
-      maintenanceStatus
+      maintenanceStatus,
+      bugs: bugs.rows
     });
   } catch (e) {
     console.log(e);
@@ -108,6 +112,22 @@ router.post("/login", async (req, res) => {
   }
 });
 
+/** post new bug
+ * @param message
+ */
+router.post("/bug", async (req, res) => {
+  try {
+    await pool.query(
+      "INSERT INTO bug (date, message, status) VALUES ($1, $2, 'unchecked')",
+      [new Date(), req.body.message]
+    );
+    res.json({ success: true });
+  } catch (e) {
+    console.log(e);
+    res.json({ serverError: true, message: "Errore nel salvataggio del bug" });
+  }
+});
+
 /** Posts new product in the database
  * @param product
  */
@@ -168,6 +188,24 @@ router.delete("/admins", checkAdmin, async (req, res) => {
       success: false,
       serverError: true,
       message: "Errore nell'eliminazione dell'utente admin"
+    });
+  }
+});
+
+/** Remove bug
+ * @param id, message
+ */
+router.delete("/bug", async (req, res) => {
+  try {
+    await pool.query("UPDATE bug SET status = 'checked' WHERE id = $1", [
+      req.body.id
+    ]);
+    res.json({ success: true });
+  } catch (e) {
+    console.log(e);
+    res.json({
+      serverError: true,
+      message: "Errore nel cambiamento di stato del bug da unchecked a checked"
     });
   }
 });

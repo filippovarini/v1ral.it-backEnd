@@ -108,3 +108,12 @@ CREATE TABLE "used_pi"
 (
     pi_id VARCHAR(256) NOT NULL PRIMARY KEY
 )
+
+CREATE TABLE "bug"
+(
+    id SERIAL NOT NULL PRIMARY KEY,
+    date TIMESTAMP NOT NULL,
+    message VARCHAR(256) NOT NULL,
+    status VARCHAR(32) NOT NULL
+    -- checked / unchecked
+)

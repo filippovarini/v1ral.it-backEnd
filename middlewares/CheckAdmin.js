@@ -12,7 +12,7 @@ const checkAdmin = async (req, res, next) => {
       );
       if (admin.rowCount > 0) {
         success = true;
-        if (admin.rows[0].type === "super-admin") req.superAdmin = true;
+        if (admin.rows[0].type === "super-user") req.superAdmin = true;
       }
     }
     if (success) next();
