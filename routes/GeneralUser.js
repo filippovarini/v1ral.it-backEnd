@@ -8,6 +8,7 @@ const NEW_PSW_POSSIBILITIES = 1000000;
 
 const sendRecoverPswEmail = require("../emails/recoverPassword");
 
+/** Reset password and receive new one via email */
 router.post("/resetPsw", async (req, res) => {
   const { type, email } = req.body;
   const newPsw = `v1ral${Math.floor(Math.random() * NEW_PSW_POSSIBILITIES)}`;
@@ -46,6 +47,25 @@ router.post("/resetPsw", async (req, res) => {
       serverError: true,
       message:
         "Errore nel reset della password. Email: " + email + " utente: " + type
+    });
+  }
+});
+
+/** Report spam shop
+ * @param shopId
+ */
+router.post("/spam", async (req, res) => {
+  try {
+    await pool.query(
+      "INSERT INTO spam (date, shop, status) VALUES ($1, $2, 'unchecked')",
+      [new Date(), req.body.shopId]
+    );
+    res.json({ success: true });
+  } catch (e) {
+    console.log(e);
+    res.json({
+      serverError: true,
+      message: "Errore nel salvataggio del negozio spam"
     });
   }
 });

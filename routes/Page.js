@@ -176,12 +176,23 @@ router.get("/shops", async (req, res) => {
       shopList.forEach(shop => (shop.inCart = isInCart(req.session, shop.id)));
     const cities = await shops.getCities();
     const categories = await shops.getCategories();
+    const challenger = req.session.challenger;
+    let challengerViral = null;
+    if (challenger) {
+      const challengerProfile = await pool.query(
+        'SELECT type FROM "user" WHERE username = $1',
+        [challenger]
+      );
+      challengerViral = challengerProfile.rows[0].type === "viral";
+    }
     res.json({
       success: true,
       shops: shopList,
       shopSI: req.session.shopSI,
       cities,
-      categories
+      categories,
+      challenger: req.session.challenger,
+      challengerViral
     });
   } catch (e) {
     console.log(e);

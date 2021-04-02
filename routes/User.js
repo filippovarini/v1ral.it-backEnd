@@ -108,6 +108,7 @@ router.post("/login", async (req, res) => {
         if (pswMatch) {
           success = true;
           if (req.session.cart) req.session.cart = null;
+          if (req.session.challenger) req.session.challenger = null;
           req.session.loginId = `@${query.rows[0].username}`;
           res.json({ success: true, user: query.rows[0] });
         }

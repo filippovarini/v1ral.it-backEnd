@@ -60,12 +60,6 @@ CREATE TABLE "goal"
     PRIMARY KEY (shop, name)
 );
 
-CREATE TABLE "bug"
-(
-    date TIMESTAMP NOT NULL PRIMARY KEY,
-    message VARCHAR(256) NOT NULL,
-    place VARCHAR(128) NOT NULL
-)
 
 -- product to sell to shops
 CREATE TABLE "product"
@@ -116,4 +110,12 @@ CREATE TABLE "bug"
     message VARCHAR(256) NOT NULL,
     status VARCHAR(32) NOT NULL
     -- checked / unchecked
+)
+
+CREATE TABLE "spam"
+(
+    id SERIAL NOT NULL PRIMARY KEY,
+    date TIMESTAMP NOT NULL,
+    shop SERIAL NOT NULL,
+    status VARCHAR(32) NOT NULL
 )

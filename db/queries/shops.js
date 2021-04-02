@@ -34,6 +34,7 @@ SELECT
   shop.province,
   shop.city,
   shop.currentprice,
+  shop.initialprice,
   COALESCE(SUM(info.amount), 0) AS disruption_index,
   COALESCE(SUM(info.price), 0) AS financed_so_far,
   COALESCE(COUNT(DISTINCT info."user"), 0) AS premiums,
@@ -125,13 +126,19 @@ const shopsQueries = {
    * by name and city and category
    */
   getFromSearch: async (name, city, category, userId) => {
-    const namePatterns = name
-      .toLowerCase()
-      .split(" ")
-      .filter(str => str !== "") // make it work even with multiple spaces
-      .map((str, i) => (i == 0 ? `%${str}%` : ` ${str}%`))
-      .join("");
-    const nameFilter = " WHERE LOWER(shop.name) LIKE $2";
+    let namePatterns = null;
+    let nameFilter = "";
+    const queryArguments = [userId];
+    if (name) {
+      namePatterns = name
+        .toLowerCase()
+        .split(" ")
+        .filter(str => str !== "") // make it work even with multiple spaces
+        .map((str, i) => (i == 0 ? `%${str}%` : ` ${str}%`))
+        .join("");
+      nameFilter = " WHERE LOWER(shop.name) LIKE $2";
+      queryArguments.push(namePatterns);
+    }
     const cityFilter = city
       ? ` AND LOWER(shop.city) LIKE '%${city.toLowerCase()}%'`
       : "";
@@ -142,7 +149,7 @@ const shopsQueries = {
         cityFilter +
         categoryFilter +
         " GROUP BY shop.id",
-      [userId, namePatterns]
+      queryArguments
     );
     return shops.rows;
   },

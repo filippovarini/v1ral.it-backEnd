@@ -186,14 +186,13 @@ router.put("/updateSI", (req, res) => {
       else req.session.shopSI = req.body.shopSI;
     } else {
       // city or category\
-      if (!req.session.shopSI)
-        throw "Session must have a title associated to be filtered";
-      else
-        Object.keys(req.body.shopSI).forEach(
-          key => (req.session.shopSI[key] = req.body.shopSI[key])
-        );
+      shopSI = req.session.shopSI || {};
+      Object.keys(req.body.shopSI).forEach(
+        key => (shopSI[key] = req.body.shopSI[key])
+      );
+      req.session.shopSI = shopSI;
     }
-    res.json({ success: true, a: req.session.shopSI });
+    res.json({ success: true });
   } catch (e) {
     console.log(e);
     res
@@ -268,6 +267,12 @@ router.put("/updatePsw", checkAuth, async (req, res) => {
         "Errore nel salvataggio delle modifiche. Ti consigliamo di riprovare"
     });
   }
+});
+
+/** Reset shop search SI */
+router.delete("/shopSI", (req, res) => {
+  req.session.shopSI = null;
+  res.json({ success: true });
 });
 
 module.exports = router;
