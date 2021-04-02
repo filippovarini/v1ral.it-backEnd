@@ -1,6 +1,5 @@
-const stripe = require("stripe")(
-  "sk_test_51IagnKBGUp477jqhopdGeyrlKAAK8mafYwfMkY19obFaLciF2LR0b9UjizcwAIhQcN2K2TA37p2EOccHZ7UgkZlo00U6LqNkEM"
-);
+const stripeKey = require("../../keys/dev").stripe_sk;
+const stripe = require("stripe")(stripeKey);
 
 const sendInsufficientBalanceEmail = require("../../emails/insufficientBalance");
 const COMMISSION = require("../../statics").commission;
@@ -9,12 +8,9 @@ const COMMISSION = require("../../statics").commission;
  * If error, return error and send email to myslef
  */
 const sendTransfers = async (req, res, next) => {
-  console.log("sending transfers");
   try {
     for (const checkout of req.session.checkout) {
-      console.log(checkout);
       const total = Math.floor(checkout.price * 100 * (1 - COMMISSION));
-      console.log(total);
       const transfer = await stripe.transfers.create({
         amount: total,
         currency: "eur",
@@ -22,7 +18,6 @@ const sendTransfers = async (req, res, next) => {
         transfer_group: req.body.transferGroupId,
         source_transaction: req.session.chargeId
       });
-      console.log(transfer);
     }
     next();
   } catch (e) {

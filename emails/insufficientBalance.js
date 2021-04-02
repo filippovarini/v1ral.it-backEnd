@@ -6,7 +6,6 @@ const sendInsufficientBalanceErrorEmail = async (
   username,
   total
 ) => {
-  console.log("sending insufficient balance");
   var data = {
     from: "The v1rals <info@v1ral.it>",
     to: "fppvrn@gmail.com",
@@ -20,8 +19,7 @@ const sendInsufficientBalanceErrorEmail = async (
   };
 
   try {
-    const sent = await mailgun.messages().send(data);
-    console.log(sent);
+    await mailgun.messages().send(data);
     return true;
   } catch (e) {
     console.log(`Error with email: ${email}`);

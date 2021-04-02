@@ -1,7 +1,6 @@
 const express = require("express");
-const stripe = require("stripe")(
-  "sk_test_51IagnKBGUp477jqhopdGeyrlKAAK8mafYwfMkY19obFaLciF2LR0b9UjizcwAIhQcN2K2TA37p2EOccHZ7UgkZlo00U6LqNkEM"
-);
+const stripeKey = require("../keys/dev").stripe_sk;
+const stripe = require("stripe")(stripeKey);
 
 const router = express.Router();
 
@@ -93,7 +92,6 @@ router.post("/paymentIntent/user", validatePayment, async (req, res) => {
       // Verify your integration in this guide by including this parameter
       metadata: { integration_check: "accept_a_payment" }
     });
-    console.log("payment intent completed");
     res.json({
       success: true,
       client_secret: paymentIntent.client_secret,
@@ -161,7 +159,6 @@ router.post(
   sendTransfer,
   postUser,
   async (req, res) => {
-    console.log("Every middleware completed with success!!!!!");
     const transactionDate = new Date();
     const transactionId = transactionDate.getTime();
     const userId = req.session.loginId.slice(1);
@@ -242,7 +239,6 @@ router.post(
  */
 router.post("/connect", async (req, res) => {
   try {
-    console.log("connecting");
     req.session.registerSession = req.body.registerSession;
     const account = await stripe.accounts.create({
       type: CONNECTED_ACCOUNT_TYPE,
