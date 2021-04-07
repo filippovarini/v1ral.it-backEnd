@@ -1,4 +1,5 @@
-const shopQueries = require("../db/queries/shops");
+const shopQueries = require("../db/queries/shop/shops");
+const shopSearchQueries = require("../db/queries/shop/shopSearch");
 const productsQueries = require("../db/queries/products");
 
 /** Validates user transaction by:
@@ -21,7 +22,7 @@ const validatePayment = async (req, res, next) => {
       const cartItems =
         req.path.split("/").slice(-1)[0] === "shop"
           ? await productsQueries.getFromIds(req.session.cart)
-          : await shopQueries.getPriceFromIds(req.session.cart);
+          : await shopSearchQueries.getPriceFromIds(req.session.cart);
       const checkout = cartItems.map(item => {
         return {
           id: item.id,

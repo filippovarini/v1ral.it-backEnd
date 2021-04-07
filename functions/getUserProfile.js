@@ -1,5 +1,5 @@
 const users = require("../db/queries/users");
-const shops = require("../db/queries/shops");
+const shopsSearchQueries = require("../db/queries/shop/shopSearch");
 
 /** Fetches the user from a user name and also gets the list of shops the user
  * is premium in
@@ -7,7 +7,7 @@ const shops = require("../db/queries/shops");
  *
  * @return object to be returned with res.json
  */
-const getUserObject = async username => {
+const getUserObject = async (username, loggedUser) => {
   const user = await users.getLongInfo(username);
   if (user.length != 1) {
     return {
@@ -16,7 +16,11 @@ const getUserObject = async username => {
       message: "Username contagiato invalido"
     };
   } else {
-    const shopList = await shops.getPurchasedByUser(user[0].username);
+    const shopList = await shopsSearchQueries.getPurchasedByUser(
+      user[0].username,
+      loggedUser
+    );
+    shopList.forEach(shop => (shop.alreadybought = shop.alreadybought !== 0));
     return { success: true, user: user[0], shops: shopList };
   }
 };

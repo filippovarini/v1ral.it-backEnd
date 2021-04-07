@@ -1,4 +1,4 @@
-const shopsQueries = require("../../db/queries/shops");
+const shopSearchQueries = require("../../db/queries/shop/shopSearch");
 const productsQueries = require("../../db/queries/products");
 
 /** Checks that the cart is valid and get cart items
@@ -18,7 +18,7 @@ const checkUserCart = async (req, res, next) => {
       const items =
         req.session.loginId && req.session.loginId[0] === "#"
           ? await productsQueries.getFromIds(req.session.cart)
-          : await shopsQueries.getFromIds(req.session.cart);
+          : await shopSearchQueries.getFromIds(req.session.cart);
       req.items = items;
       next();
     }

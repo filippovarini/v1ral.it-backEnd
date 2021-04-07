@@ -14,7 +14,7 @@ const checkUpdatable = require("../middlewares/CheckUpdatable");
 const checkShop = require("../middlewares/CheckShop");
 
 // db queries
-const shopQueries = require("../db/queries/shops");
+const shopQueries = require("../db/queries/shop/shops");
 const servicesAndGoals = require("../db/queries/servicesAndGoals");
 
 /** Get shop cart

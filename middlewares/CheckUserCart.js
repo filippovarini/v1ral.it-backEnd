@@ -1,4 +1,4 @@
-const getFromIds = require("../db/queries/shops").getFromIds;
+const getFromIds = require("../db/queries/shop/shopSearch").getFromIds;
 
 /**
  * @todo CHECK THAT THE SHOPS SELECTED HAVE NOT BEEN ALREADY PURCHASED

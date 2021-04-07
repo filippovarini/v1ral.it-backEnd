@@ -13,7 +13,8 @@ const checkShopCart = require("../middlewares/CheckShopCart");
 
 // queries
 const cases = require("../db/queries/cases");
-const shops = require("../db/queries/shops");
+const shops = require("../db/queries/shop/shops");
+const shopSearchQueries = require("../db/queries/shop/shopSearch");
 const users = require("../db/queries/users");
 const premiums = require("../db/queries/premiums");
 const servicesAndGoals = require("../db/queries/servicesAndGoals");
@@ -25,7 +26,7 @@ const getUserObject = require("../functions/getUserProfile");
 const checkChargesEnabled = require("../functions/connectChargesEnabled");
 /** Checks if the user viewing the shop has should see it as added or not */
 const isInCart = (session, shopId) => {
-  return session.cart && session.cart.includes(shopId);
+  return Boolean(session.cart && session.cart.includes(shopId));
 };
 
 /** Fetches full info of a user. */
@@ -64,11 +65,11 @@ router.get("/header", checkAuth, async (req, res) => {
         const shop = await shops.getProfile(req.session.loginId.slice(1));
         res.json({
           success: true,
-          name: "#" + shop[0].name,
-          id: shop[0].id,
-          userProfile: shop[0].logourl,
-          email: shop[0].email,
-          address: `${shop[0].street}, ${shop[0].city}`
+          name: "#" + shop.name,
+          id: shop.id,
+          userProfile: shop.logourl,
+          email: shop.email,
+          address: `${shop.street}, ${shop.city}`
         });
         break;
       }
@@ -115,7 +116,7 @@ router.get("/home/quickFacts", async (req, res) => {
 
 router.get("/home/shops", async (req, res) => {
   try {
-    const shopList = await shops.getList();
+    const shopList = await shopSearchQueries.getList();
     res.json({ success: true, shopList });
   } catch (e) {
     console.log(e);
@@ -165,17 +166,17 @@ router.get("/shops", async (req, res) => {
       req.session.loginId && req.session.loginId[0] === "@"
         ? req.session.loginId.slice(1)
         : null;
-    if (req.session.shopSI) {
-      const { name, city, category } = req.session.shopSI;
-      shopList = await shops.getFromSearch(name, city, category, userId);
-    } else shopList = await shops.getList(userId);
+    shopList = await shopSearchQueries.getFromSearch(
+      userId,
+      req.session.shopSI || {}
+    );
     // search for already bought (make boolean)
     shopList.forEach(shop => (shop.alreadybought = shop.alreadybought !== 0));
     // search for in cart
     if (req.session.cart)
       shopList.forEach(shop => (shop.inCart = isInCart(req.session, shop.id)));
-    const cities = await shops.getCities();
-    const categories = await shops.getCategories();
+    const cities = await shopSearchQueries.getCities();
+    const categories = await shopSearchQueries.getCategories();
     const challenger = req.session.challenger;
     let challengerViral = null;
     if (challenger) {
@@ -205,23 +206,45 @@ router.get("/shops", async (req, res) => {
 });
 
 /**
- * On Front-End, get /shopProfile/:id.
- * Send request to /page/shopProfile/:id
- * - updates view count of shop
+ * Get shop profile. Could be simple shop profile or dashboard. If dashboard,
+ * pass to next.
+ * - updates view count of shop if simple shop profile
  */
 router.get("/shopProfile/:id", async (req, res) => {
   try {
-    shops.viewed(req.params.id);
-    const shop = await shops.getProfileInfo(req.params.id);
+    let dashboard,
+      chargesEnabled,
+      added,
+      alreadyBought,
+      totalSpent = null;
+
+    const shop = await shops.getProfile(req.params.id);
     const services = await servicesAndGoals.servicesFromId(req.params.id);
     const goals = await servicesAndGoals.goalsFromId(req.params.id);
-    const added = await isInCart(req.session, parseInt(req.params.id));
     const cases = await shops.getCases(req.params.id);
-    const alreadyBought =
-      !added &&
-      req.session.loginId &&
-      req.session.loginId[0] === "@" &&
-      (await checkAlreadyBought(req.session.loginId.slice(1), req.params.id));
+
+    if (req.session.loginId && req.session.loginId.slice(1) === req.params.id) {
+      // dashboard
+      dashboard = true;
+      totalSpent = await transactions.getShopTransactionTotal(
+        req.session.loginId.slice(1)
+      );
+      chargesEnabled = await checkChargesEnabled(shop.connectedid);
+    } else {
+      // just visited the profile (update viewed)
+      await shops.viewed(req.params.id);
+      added = await isInCart(req.session, parseInt(req.params.id));
+      alreadyBought = Boolean(
+        !added &&
+          req.session.loginId &&
+          req.session.loginId[0] === "@" &&
+          (await checkAlreadyBought(
+            req.session.loginId.slice(1),
+            req.params.id
+          ))
+      );
+    }
+
     res.json({
       success: true,
       shop,
@@ -229,7 +252,10 @@ router.get("/shopProfile/:id", async (req, res) => {
       goals,
       cases,
       added,
-      alreadyBought
+      alreadyBought,
+      dashboard,
+      totalSpent,
+      chargesEnabled
     });
   } catch (e) {
     console.log(e);
@@ -320,7 +346,10 @@ router.get("/users/:username", async (req, res) => {
  */
 router.get("/userProfile/:username", async (req, res) => {
   try {
-    const response = await getUserObject(req.params.username);
+    const loggedUser = req.session.loginId
+      ? req.session.loginId.slice(1)
+      : null;
+    const response = await getUserObject(req.params.username, loggedUser);
     res.json(response);
   } catch (e) {
     console.log(e);
@@ -348,7 +377,8 @@ router.get("/dashboard/user", checkAuth, async (req, res) => {
     if (req.session.loginId[0] !== "@")
       throw `LoginId prefix should be @ but is ${req.session.loginId[0]}`;
     else {
-      const response = await getUserObject(req.session.loginId.slice(1));
+      const username = req.session.loginId.slice(1);
+      const response = await getUserObject(username, username);
       res.json(response);
     }
   } catch (e) {
@@ -378,48 +408,6 @@ router.get("/user/settings", checkAuth, async (req, res) => {
       serverError: true,
       message:
         "Errore nel recupero delle informazioni dell'utente per i settings"
-    });
-  }
-});
-
-/** USED FOR DASHBOARD AND SETTINGS
- * Checks if there is a valid loginId
- * Fetches shop info
- */
-router.get("/dashboard/shop", checkAuth, async (req, res) => {
-  try {
-    if (req.session.loginId[0] !== "#") {
-      res.json({
-        success: false,
-        unauthorized: true,
-        message: "Contagiato non autorizzato alla dashboard di un focolaio"
-      });
-    } else {
-      const shopId = req.session.loginId.slice(1);
-      const shop = await shops.getDashboardInfo(shopId);
-      const services = await servicesAndGoals.servicesFromId(shopId);
-      const goals = await servicesAndGoals.goalsFromId(shopId);
-      const cases = await shops.getCases(shopId);
-      const totalSpent = await transactions.getShopTransactionTotal(
-        req.session.loginId.slice(1)
-      );
-      const chargesEnabled = await checkChargesEnabled(shop.connectedid);
-      res.json({
-        success: true,
-        shop,
-        services,
-        goals,
-        cases,
-        chargesEnabled,
-        totalSpent
-      });
-    }
-  } catch (e) {
-    console.log(e);
-    res.status(500).json({
-      success: false,
-      serverError: true,
-      message: "Shop ID non valido o non unico"
     });
   }
 });
