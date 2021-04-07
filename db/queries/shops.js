@@ -123,11 +123,11 @@ const shopsQueries = {
   },
   /**
    * Get shops by name inserted. Using patterns to get flexible search. Filter
-   * by name and city and category
+   * by name and city and category. Can also filter only by one
    */
   getFromSearch: async (name, city, category, userId) => {
     let namePatterns = null;
-    let nameFilter = "";
+    let nameFilter = " WHERE shop.name LIKE '%'";
     const queryArguments = [userId];
     if (name) {
       namePatterns = name
@@ -143,14 +143,13 @@ const shopsQueries = {
       ? ` AND LOWER(shop.city) LIKE '%${city.toLowerCase()}%'`
       : "";
     const categoryFilter = category ? ` AND category LIKE '%${category}%'` : "";
-    const shops = await pool.query(
+    const finalQuery =
       rawListQueryAdded +
-        nameFilter +
-        cityFilter +
-        categoryFilter +
-        " GROUP BY shop.id",
-      queryArguments
-    );
+      nameFilter +
+      cityFilter +
+      categoryFilter +
+      " GROUP BY shop.id";
+    const shops = await pool.query(finalQuery, queryArguments);
     return shops.rows;
   },
   /** Retreives name, logourl, email and address for header profile */
