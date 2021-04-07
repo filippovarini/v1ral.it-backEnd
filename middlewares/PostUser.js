@@ -7,7 +7,6 @@ const userQueries = require("../db/queries/users");
  * @param newUser
  */
 const postUser = async (req, res, next) => {
-  console.log("posting user");
   if (!req.body.newUser) {
     next();
   } else {
