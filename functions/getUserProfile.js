@@ -13,7 +13,7 @@ const getUserObject = async (username, loggedUser) => {
     return {
       success: false,
       invalidUsername: true,
-      message: "Username contagiato invalido"
+      message: "Username utente invalido"
     };
   } else {
     const shopList = await shopsSearchQueries.getPurchasedByUser(

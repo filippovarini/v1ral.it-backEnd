@@ -210,7 +210,7 @@ router.get("/shops", async (req, res) => {
  * pass to next.
  * - updates view count of shop if simple shop profile
  */
-router.get("/shopProfile/:id", async (req, res) => {
+router.get("/shop/:id", async (req, res) => {
   try {
     let dashboard,
       chargesEnabled,
@@ -344,13 +344,14 @@ router.get("/users/:username", async (req, res) => {
 /** Send back single user info
  * get  username from query params
  */
-router.get("/userProfile/:username", async (req, res) => {
+router.get("/user/:username", async (req, res) => {
   try {
     const loggedUser = req.session.loginId
       ? req.session.loginId.slice(1)
       : null;
+    const dashboard = req.params.username === loggedUser;
     const response = await getUserObject(req.params.username, loggedUser);
-    res.json(response);
+    res.json({ ...response, dashboard });
   } catch (e) {
     console.log(e);
     res.status(500).json({
@@ -364,32 +365,6 @@ router.get("/userProfile/:username", async (req, res) => {
 /* LOG IN - REGISTER */
 router.get("/login", checkNotAuth, (req, res) => {
   res.json({ success: true });
-});
-
-/* DASHBOARDS */
-
-/** USED FOR DASHBOARD AND SETTINGS
- * Checks if there is a valid loginId
- * Fetches user info
- */
-router.get("/dashboard/user", checkAuth, async (req, res) => {
-  try {
-    if (req.session.loginId[0] !== "@")
-      throw `LoginId prefix should be @ but is ${req.session.loginId[0]}`;
-    else {
-      const username = req.session.loginId.slice(1);
-      const response = await getUserObject(username, username);
-      res.json(response);
-    }
-  } catch (e) {
-    console.log(e);
-    res.status(500).json({
-      success: false,
-      serverError: true,
-      message:
-        "Errore nel recupero delle informazioni dell'utente per la dashboard"
-    });
-  }
 });
 
 /** Get user info for settings */
