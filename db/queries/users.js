@@ -29,7 +29,7 @@ const userQueries = {
   getLongInfo: async username => {
     const pattern = `%${username}%`;
     const users = await pool.query(
-      listQuery + " WHERE LOWER(username) LIKE $1",
+      listQuery + " WHERE LOWER(username) LIKE LOWER($1)",
       [pattern]
     );
     return users.rows;
@@ -39,7 +39,7 @@ const userQueries = {
     const users = await pool.query(
       `SELECT username, profileurl, email, street, city
       FROM "user"
-      WHERE LOWER(username) = $1`,
+      WHERE LOWER(username) = LOWER($1)`,
       [username]
     );
     if (users.rowCount !== 1)
@@ -52,7 +52,7 @@ const userQueries = {
     const users = await pool.query(
       'SELECT psw\
       FROM "user"\
-      WHERE LOWER(username) = $1',
+      WHERE LOWER(username) = LOWER($1)',
       [username]
     );
     if (users.rowCount !== 1)
@@ -67,7 +67,7 @@ const userQueries = {
   },
   usernameUnique: async username => {
     const user = await pool.query(
-      'SELECT username FROM "user" WHERE username = $1',
+      'SELECT username FROM "user" WHERE username = LOWER($1)',
       [username]
     );
     if (user.rowCount === 0) return true;
@@ -90,7 +90,7 @@ const userQueries = {
       `
     UPDATE "user"
     SET ${setters}
-    WHERE username = '${username}'
+    WHERE username = LOWER('${username}')
     RETURNING *`,
       Object.values(newInfo)
     );
@@ -98,7 +98,9 @@ const userQueries = {
     else return updatedInfo.rows[0];
   },
   delete: async username => {
-    await pool.query('DELETE FROM "user" WHERE username = $1', [username]);
+    await pool.query('DELETE FROM "user" WHERE username = LOWER($1)', [
+      username
+    ]);
   }
 };
 
