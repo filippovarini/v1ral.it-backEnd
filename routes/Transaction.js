@@ -285,7 +285,6 @@ router.put("/cart", checkCartUpdatable, (req, res) => {
   cart = req.session.cart || [];
   cart.push(req.body.item);
   req.session.cart = cart;
-  ``;
   res.json({ success: true });
 });
 

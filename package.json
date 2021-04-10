@@ -9,7 +9,7 @@
     "start": "concurrently \"npm run server\" \"npm run client\"",
     "client-install": "npm install -- prefix client",
     "client": "npm run start --prefix client",
-    "dev": "concurrently \"npm run server\" \"npm run client\""
+    "dev": "nodemon server.js"
   },
   "repository": {
     "type": "git",

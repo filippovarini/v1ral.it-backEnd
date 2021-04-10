@@ -3,6 +3,7 @@ CREATE TABLE "shop"
     id SERIAL NOT NULL PRIMARY KEY,
     name VARCHAR(128) NOT NULL,
     category VARCHAR(64) NOT NULL,
+    pass_month_duration INTEGER NOT NULL,
     maxPremiums INTEGER NOT NULL,
     initialPrice INTEGER NOT NULL,
     currentPrice INTEGER NOT NULL,
@@ -40,6 +41,7 @@ CREATE TABLE "premium"
     shop SERIAL NOT NULL,
     "user" VARCHAR(32) NOT NULL,
     price INTEGER NOT NULL,
+    transaction_date TIMESTAMP NOT NULL,
     PRIMARY KEY (shop, "user")
 );
 

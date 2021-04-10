@@ -2,3 +2,4 @@
 - Check that a user cannot buy a shop already bought even from postman
 - get sessions
 - give a look at SOURCE TRANSACTION (STRIPE BALANCE)
+- check that when saving the transaction, you save the current price, not the acutal!

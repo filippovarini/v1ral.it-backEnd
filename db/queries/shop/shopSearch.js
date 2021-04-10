@@ -1,5 +1,6 @@
 const queriesText = require("../../queriesText");
 const pool = require("../../db");
+const formatPassExpiration = require("../../../functions/formatPassExpiration");
 
 /** Shop search queries */
 const shopSearch = {
@@ -20,12 +21,20 @@ const shopSearch = {
    * the logged user has bought them as well
    */
   getPurchasedByUser: async (username, loggedUsername) => {
-    const filter = `
-    WHERE shop.id = ANY (SELECT shop 
-      FROM premium 
-      WHERE premium."user" = '${username}') `;
-    const shops = await queriesText.shopList([loggedUsername], filter);
-    return shops.rows;
+    let shops = null;
+    if (loggedUsername === username) {
+      // dashboard
+      query = await queriesText.passes(username);
+      shops = formatPassExpiration(query);
+    } else {
+      const filter = `
+      WHERE shop.id = ANY (SELECT shop 
+        FROM premium 
+        WHERE premium."user" = '${username}') `;
+      const query = await queriesText.shopList([loggedUsername], filter);
+      shops = query.rows;
+    }
+    return shops;
   },
   /**
    * Get shops by search parameters. Using patterns to get flexible search.
