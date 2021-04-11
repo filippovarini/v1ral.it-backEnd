@@ -71,6 +71,23 @@ const transactionQueries = {
     );
     return premiumsQuery.rows;
   },
+  /** Inserts the renewal from checkout session */
+  insertRenewals: async (userId, renewals, transactionDate) => {
+    if (renewals.length === 0) return true;
+    else {
+      console.log("inserting renewals");
+      let values = "";
+      renewals.forEach(
+        (shop, i) =>
+          (values += (i == 0 ? "" : ", ") + `(${shop.id}, '${userId}', $1)`)
+      );
+      console.log(values);
+      await pool.query(`INSERT INTO renewal VALUES ${values}`, [
+        transactionDate
+      ]);
+      return true;
+    }
+  },
   deleteFromTransactionId: async transactionId => {
     await pool.query("DELETE FROM shop_transaction WHERE date = $1", [
       new Date(transactionId)

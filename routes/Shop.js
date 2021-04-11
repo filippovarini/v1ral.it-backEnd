@@ -8,7 +8,6 @@ const router = express.Router();
 const checkChargesEnabled = require("../functions/connectChargesEnabled");
 
 // middlewares
-const checkShopCart = require("../middlewares/CheckShopCart");
 const checkAuth = require("../middlewares/CheckAuth");
 const checkUpdatable = require("../middlewares/CheckUpdatable");
 const checkShop = require("../middlewares/CheckShop");
@@ -16,16 +15,6 @@ const checkShop = require("../middlewares/CheckShop");
 // db queries
 const shopQueries = require("../db/queries/shop/shops");
 const servicesAndGoals = require("../db/queries/servicesAndGoals");
-
-/** Get shop cart
- * 1. check it is a shop user and that the cart is valid
- * 2. get checkout info
- */
-router.get("/cart", checkShop, checkShopCart, (req, res) => {
-  const products = req.products;
-  req.products = null;
-  res.json({ success: true, products });
-});
 
 /** Register shop from registerSession saved before connecting account.
  * Also check that the account id passed to get to the shop/register/done/:id

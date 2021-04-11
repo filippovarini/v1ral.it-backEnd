@@ -4,12 +4,11 @@ const pool = require("../db/db");
 const router = express.Router();
 
 // middlewares
-const checkUserCart = require("../middlewares/CheckUserCart");
+const checkCart = require("../middlewares/Cart/ValidateCart");
 const checkTransactionId = require("../middlewares/CheckTransactionId");
 const checkAuth = require("../middlewares/CheckAuth");
 const checkNotAuth = require("../middlewares/CheckNotAuth");
 const checkShop = require("../middlewares/CheckShop");
-const checkShopCart = require("../middlewares/CheckShopCart");
 
 // queries
 const cases = require("../db/queries/cases");
@@ -26,7 +25,9 @@ const getUserObject = require("../functions/getUserProfile");
 const checkChargesEnabled = require("../functions/connectChargesEnabled");
 /** Checks if the user viewing the shop has should see it as added or not */
 const isInCart = (session, shopId) => {
-  return Boolean(session.cart && session.cart.includes(shopId));
+  return Boolean(
+    session.cart && session.cart.some(cartItem => cartItem.id === shopId)
+  );
 };
 
 /** Fetches full info of a user. */
@@ -278,16 +279,16 @@ router.get("/shop/:id", async (req, res) => {
 /** User Checkout info
  * sends back shops and whether the user is logged in or has a challenger
  */
-router.get("/checkout/user", checkUserCart, async (req, res) => {
+router.get("/checkout/user", checkCart, async (req, res) => {
   try {
-    const shops = req.shops;
-    req.shops = null; // free up req of unnecessary data
+    const items = req.items;
+    req.items = null; // free up req of unnecessary data
     const isLogged = Boolean(
       req.session.loginId && req.session.loginId[0] === "@"
     );
     const challenger = req.session.challenger;
     const user = isLogged ? await getUser(req.session.loginId.slice(1)) : null;
-    res.json({ success: true, shops, isLogged, challenger, user });
+    res.json({ success: true, items, isLogged, challenger, user });
   } catch (e) {
     console.log(e);
     res.json({
@@ -301,11 +302,11 @@ router.get("/checkout/user", checkUserCart, async (req, res) => {
 /** Shop Checkout info
  * sends back shops and whether the user is logged in or has a challenger
  */
-router.get("/checkout/shop", checkShop, checkShopCart, async (req, res) => {
+router.get("/checkout/shop", checkShop, checkCart, async (req, res) => {
   try {
-    const products = req.products;
-    req.products = null; // free up req of unnecessary data
-    res.json({ success: true, products });
+    const items = req.items;
+    req.items = null; // free up req of unnecessary data
+    res.json({ success: true, items });
   } catch (e) {
     console.log(e);
     res.json({
@@ -351,6 +352,11 @@ router.get("/user/:username", async (req, res) => {
       : null;
     const dashboard = req.params.username === loggedUser;
     const response = await getUserObject(req.params.username, loggedUser);
+    if (response.shops) {
+      response.shops.forEach(
+        shop => (shop.isInCart = isInCart(req.session, shop.id))
+      );
+    }
     res.json({ ...response, dashboard });
   } catch (e) {
     console.log(e);
@@ -389,13 +395,15 @@ router.get("/user/settings", checkAuth, async (req, res) => {
 
 /** Gets items sold for shops' marketing
  */
-
 router.get("/spread", checkShop, async (req, res) => {
   try {
     let productsList = await products.getList();
     if (req.session.cart)
       productsList.forEach(
-        product => (product.added = req.session.cart.includes(product.id))
+        product =>
+          (product.added = req.session.cart.some(
+            cartItem => cartItem.id === product.id
+          ))
       );
     res.json({
       success: true,

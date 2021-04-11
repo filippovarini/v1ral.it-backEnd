@@ -13,9 +13,9 @@ const checkChargesEnabled = require("../functions/connectChargesEnabled");
 // middlewares
 const postUser = require("../middlewares/PostUser");
 const checkShop = require("../middlewares/CheckShop");
-const checkCart = require("../middlewares/Cart/CheckCart");
+const validateCart = require("../middlewares/Cart/ValidateCart");
 const checkCartUpdatable = require("../middlewares/Cart/CheckCartUpdatable");
-const validatePayment = require("../middlewares/ValidatePayment");
+const validatePayment = require("../middlewares/Transactions/ValidatePayment");
 const ChecknItentSucceeded = require("../middlewares/ChecknItentSucceeded");
 const sendTransfer = require("../middlewares/Transactions/SendTransfers");
 
@@ -28,7 +28,7 @@ const transactionQueries = require("../db/queries/transactions");
  * 1. Checks that there is a cart session
  * 2. Fetches info about the items in the cart
  */
-router.get("/cart", checkCart, (req, res) => {
+router.get("/cart", validateCart, (req, res) => {
   const items = req.items;
   req.items = null;
   res.json({ success: true, items });
@@ -77,36 +77,44 @@ router.post("/dashboard", async (req, res) => {
  * Create separate transfers for connected accounts. Send back transfer_group
  * @param shipAgain whether to add the shipAgain price
  */
-router.post("/paymentIntent/user", validatePayment, async (req, res) => {
-  try {
-    // total amount asked in cents
-    let total =
-      req.session.checkout.reduce((acc, item) => acc + item.price, 0) * 100;
-    if (req.body.shipAgain) total += SHIP_AGAIN_PRICE;
-    const transferGroupId = String(new Date().getTime());
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: total,
-      currency: "eur",
-      payment_method_types: ["card"],
-      transfer_group: transferGroupId,
-      // Verify your integration in this guide by including this parameter
-      metadata: { integration_check: "accept_a_payment" }
-    });
-    res.json({
-      success: true,
-      client_secret: paymentIntent.client_secret,
-      intentId: paymentIntent.id,
-      transferGroupId
-    });
-  } catch (e) {
-    console.log(e);
-    res.json({
-      serverError: true,
-      stripeError: true,
-      message: "Errore nella creazione della sessione per il checkout"
-    });
+router.post(
+  "/paymentIntent/user",
+  validateCart,
+  validatePayment,
+  async (req, res) => {
+    try {
+      console.log("payment intent");
+      console.log(req.session.checkout);
+      // total amount asked in cents
+      let total =
+        req.session.checkout.reduce((acc, item) => acc + item.price, 0) * 100;
+      console.log(total);
+      if (req.body.shipAgain) total += SHIP_AGAIN_PRICE;
+      const transferGroupId = String(new Date().getTime());
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: total,
+        currency: "eur",
+        payment_method_types: ["card"],
+        transfer_group: transferGroupId,
+        // Verify your integration in this guide by including this parameter
+        metadata: { integration_check: "accept_a_payment" }
+      });
+      res.json({
+        success: true,
+        client_secret: paymentIntent.client_secret,
+        intentId: paymentIntent.id,
+        transferGroupId
+      });
+    } catch (e) {
+      console.log(e);
+      res.json({
+        serverError: true,
+        stripeError: true,
+        message: "Errore nella creazione della sessione per il checkout"
+      });
+    }
   }
-});
+);
 
 /** Gets intention of payment for shop (so just a normal checkout).
  * Calculates the payment price from cart and sends back client_secret
@@ -150,6 +158,7 @@ router.post(
  * - saves premiums with transaction date
  * - deletes cart session
  * @param intentId
+ * @parma req.items with all the info
  * @param newUser
  * @param transferGroupId
  */
@@ -162,10 +171,27 @@ router.post(
     const transactionDate = new Date();
     const transactionId = transactionDate.getTime();
     const userId = req.session.loginId.slice(1);
+
+    const premiumsToInsert = req.session.checkout.filter(
+      item => item.cartType === "pass"
+    );
+
+    const renewalsToInsert = req.session.checkout.filter(
+      item => item.cartType === "renewal"
+    );
+
+    console.log(premiumsToInsert);
+    console.log(renewalsToInsert);
+
     try {
       await premiumQueries.insertFromIds(
         userId,
-        req.session.checkout,
+        premiumsToInsert,
+        transactionDate
+      );
+      await transactionQueries.insertRenewals(
+        userId,
+        renewalsToInsert,
         transactionDate
       );
       // remove all session data
@@ -278,7 +304,8 @@ router.post("/connect", async (req, res) => {
 /**
  * Add items to the cart. Check that the user doing this action is allowed to do
  * that
- * @param item
+ * @param item {id, type} Id of the item and Type of the item (shop pass (pass),
+ *  shop pass renew after expir (renew) or shop marketing product (product) )
  */
 router.put("/cart", checkCartUpdatable, (req, res) => {
   // Already validated
@@ -289,7 +316,7 @@ router.put("/cart", checkCartUpdatable, (req, res) => {
 });
 
 /** Removes from cart
- * @param item Id of the shop or product to be removed from cart
+ * @param item {id, type} Id and type of the shop or product to be removed from cart
  */
 router.delete("/cart", (req, res) => {
   if (!req.session.cart)
@@ -299,7 +326,9 @@ router.delete("/cart", (req, res) => {
       message: "Nessun carrello salvato nella sessione"
     });
   else {
-    req.session.cart = req.session.cart.filter(item => item != req.body.item);
+    req.session.cart = req.session.cart.filter(item => {
+      return item.id !== req.body.item.id || item.type !== req.body.item.type;
+    });
     res.json({ success: true });
   }
 });

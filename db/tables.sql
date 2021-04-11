@@ -45,6 +45,14 @@ CREATE TABLE "premium"
     PRIMARY KEY (shop, "user")
 );
 
+-- Save table of renewals so that you can get analytics on how many ppl renew
+CREATE TABLE "renewal"
+(
+    shop SERIAL NOT NULL,
+    "user" VARCHAR(32) NOT NULL,
+    renewal_date TIMESTAMP NOT NULL
+)
+
 CREATE TABLE "service"
 (
     shop SERIAL NOT NULL,

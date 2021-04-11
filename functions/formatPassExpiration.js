@@ -9,7 +9,7 @@ const formatPassExpiration = shops => {
   const now = new Date();
   shops.map(shop => {
     const passUsePeriod = Math.ceil(
-      (now - new Date(shop.transaction_date)) / dayInMillis
+      (now - new Date(shop.last_renewal)) / dayInMillis
     );
     const daysLeft = shop.pass_month_duration * avgDaysInMonth - passUsePeriod;
     shop.daysLeft = daysLeft;

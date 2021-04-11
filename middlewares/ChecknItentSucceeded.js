@@ -7,6 +7,7 @@ const paymentQueries = require("../db/queries/payments");
  */
 const intentSucceeded = async (req, res, next) => {
   try {
+    console.log("checking intent succeeded");
     let intentValid = false;
     const intent = await stripe.paymentIntents.retrieve(req.body.intentId);
     if (intent.status === "succeeded") {

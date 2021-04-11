@@ -7,6 +7,7 @@ const premiumQueries = {
    * @param transaction_date date of successful transaction
    */
   insertFromIds: async (userId, shops, transaction_date) => {
+    console.log("inserting premiums");
     let values = "";
     shops.forEach(
       (shop, i) =>

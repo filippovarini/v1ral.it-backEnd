@@ -19,6 +19,7 @@ const queriesText = {
         shop.backgroundurl,
         shop.province,
         shop.city,
+        shop.connectedid,
         shop.currentprice,
         shop.initialprice,
         COALESCE(SUM(info.amount), 0) AS disruption_index,
@@ -75,10 +76,10 @@ const queriesText = {
     // query shop and single premium (the pass the user bought)
     const query1 = await pool.query(
       `
-      SELECT 
+      SELECT
         shop.id,
         shop.name,
-        shop.category, 
+        shop.category,
         shop.logourl,
         shop.backgroundurl,
         shop.province,
@@ -86,11 +87,22 @@ const queriesText = {
         shop.pass_month_duration,
         shop.currentprice,
         shop.initialprice,
-        premium.price AS price_payed,
-        premium.transaction_date
-      FROM premium JOIN shop
-        ON shop.id = premium.shop
-      WHERE premium.user = $1
+        premiums.price_payed,
+        premiums.last_renewal 
+      FROM
+        shop 
+        JOIN
+            (SELECT
+                  shop,
+                  "user",
+                  premium.price AS price_payed,
+                  COALESCE(MAX(renewal.renewal_date), premium.transaction_date) AS last_renewal 
+              FROM premium NATURAL LEFT JOIN renewal 
+              GROUP BY shop, "user", premium.transaction_date)
+            AS premiums 
+        ON shop.id = premiums.shop 
+      WHERE
+        premiums.user = $1 
       ORDER BY shop.id DESC`,
       [username]
     );
