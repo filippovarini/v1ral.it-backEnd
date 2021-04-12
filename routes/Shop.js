@@ -10,7 +10,6 @@ const checkChargesEnabled = require("../functions/connectChargesEnabled");
 // middlewares
 const checkAuth = require("../middlewares/CheckAuth");
 const checkUpdatable = require("../middlewares/CheckUpdatable");
-const checkShop = require("../middlewares/CheckShop");
 
 // db queries
 const shopQueries = require("../db/queries/shop/shops");
@@ -38,6 +37,7 @@ router.post("/register", async (req, res) => {
         maxPremiums,
         initialPrice,
         currentPrice,
+        passExpiry,
         clicks,
         bio,
         email,
@@ -58,6 +58,7 @@ router.post("/register", async (req, res) => {
         maxPremiums,
         initialPrice,
         currentPrice,
+        passExpiry,
         clicks,
         bio,
         email,

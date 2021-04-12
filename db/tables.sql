@@ -23,6 +23,7 @@ CREATE TABLE "shop"
 CREATE TABLE "user"
 (
     username VARCHAR(32) NOT NULL PRIMARY KEY,
+    name VARCHAR(64) NOT NULL,
     email VARCHAR(256) NOT NULL,
     type VARCHAR(16) NOT NULL,
     challenger VARCHAR(32) NOT NULL,

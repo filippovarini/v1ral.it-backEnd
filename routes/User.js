@@ -4,6 +4,9 @@ const pool = require("../db/db");
 
 const router = express.Router();
 
+// classes
+const UserInserter = require("../classes/UserInserter");
+
 // middlewares
 const checkAuth = require("../middlewares/CheckAuth");
 const checkUpdatable = require("../middlewares/CheckUpdatable");
@@ -17,14 +20,16 @@ const isEmail = login => {
 };
 
 /* checks uniqueness of username */
-router.get("/usernameCheck/:username", async (req, res) => {
+router.get("/usernames", async (req, res) => {
   try {
-    const unique = await userQueries.usernameUnique(req.params.username);
-    res.json({ unique });
+    const usernames = await pool.query('SELECT username FROM "user"');
+    res.json({
+      success: true,
+      usernames: usernames.rows.map(item => item.username)
+    });
   } catch (e) {
     console.log(e);
     res.status(500).json({
-      success: false,
       serverError: true,
       message: "Errore nel controllare l'originalità dell'username"
     });
@@ -49,39 +54,29 @@ router.get("/name/:username", async (req, res) => {
   }
 });
 
+/** Saves the new user info in the session so that on checkout it can be saved
+ * @param newUser
+ */
+router.post("/newUser", (req, res) => {
+  req.session.newUser = req.body.newUser;
+  res.json({ success: true });
+});
+
 /* inserts new challenger in table */
 router.post("/register", async (req, res) => {
-  const {
-    username,
-    email,
-    type,
-    challenger,
-    city,
-    province,
-    street,
-    postcode,
-    profileUrl,
-    psw,
-    reason
-  } = req.body;
-
   try {
-    const hashed = await bcrypt.hash(psw, 10);
-    const newUser = await userQueries.register([
-      username,
-      email,
-      type,
-      challenger,
-      city,
-      province,
-      street,
-      postcode,
-      profileUrl,
-      hashed,
-      reason
-    ]);
-    req.session.loginId = `@${newUser.rows[0].username}`;
-    res.json({ user: newUser.rows[0], success: true });
+    if (req.session.newUser) {
+      const userInserter = new UserInserter(req.session.newUser);
+      const user = await userInserter.save("user");
+      req.session.loginId = `@${user.username}`;
+      req.session.newUser = null;
+      res.json({ user, success: true });
+    } else {
+      res.json({
+        unauthorized: true,
+        message: "Utente non autorizzato alla registrazione"
+      });
+    }
   } catch (e) {
     res.status(500).json({
       success: false,

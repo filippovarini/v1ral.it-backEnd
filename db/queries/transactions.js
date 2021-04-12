@@ -75,7 +75,6 @@ const transactionQueries = {
   insertRenewals: async (userId, renewals, transactionDate) => {
     if (renewals.length === 0) return true;
     else {
-      console.log("inserting renewals");
       let values = "";
       renewals.forEach(
         (shop, i) =>

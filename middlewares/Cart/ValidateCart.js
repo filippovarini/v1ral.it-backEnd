@@ -20,7 +20,6 @@ insertRenewalPrice = async (cartItems, username) => {
  * - getting shop prices and info from cart
  */
 const CheckCart = async (req, res, next) => {
-  console.log("validating cart");
   try {
     if (!req.session.cart || req.session.cart.length === 0) {
       res.json({

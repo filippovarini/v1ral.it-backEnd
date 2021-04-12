@@ -65,18 +65,9 @@ const userQueries = {
     const users = await pool.query(listQuery);
     return users.rows;
   },
-  usernameUnique: async username => {
-    const user = await pool.query(
-      'SELECT username FROM "user" WHERE username = LOWER($1)',
-      [username]
-    );
-    if (user.rowCount === 0) return true;
-
-    return false;
-  },
   register: async values => {
     const newUser = await pool.query(
-      'INSERT INTO "user" VALUES($1, $2, $3, $4,$5, $6, $7, $8, $9, $10, $11) RETURNING * ',
+      'INSERT INTO "user" VALUES($1, $2, $3, $4,$5, $6, $7, $8, $9, $10, $11, $12) RETURNING * ',
       values
     );
     return newUser;
