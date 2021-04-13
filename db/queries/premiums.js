@@ -7,12 +7,10 @@ const premiumQueries = {
    * @param transaction_date date of successful transaction
    */
   insertFromIds: async (userId, shops, transaction_date) => {
-    let values = "";
-    shops.forEach(
-      (shop, i) =>
-        (values +=
-          (i == 0 ? "" : ", ") + `(${shop.id}, '${userId}', ${shop.price}, $1)`)
-    );
+    const values = shops
+      .map(shop => `(${shop.id}, '${userId}', ${shop.price}, $1)`)
+      .join(", ");
+
     const premiumsQuery = await pool.query(
       `INSERT INTO premium VALUES ${values} RETURNING *`,
       [transaction_date]

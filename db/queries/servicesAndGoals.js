@@ -12,13 +12,13 @@ const shopInfos = {
   },
   /** Insert multiple services */
   insertMultipleServices: async (shopId, services) => {
-    let values = "";
-    services.forEach(
-      (service, i) =>
-        (values +=
-          (i == 0 ? "" : ", ") +
-          `(${shopId}, '${service.name}', '${service.image}', '${service.type}')`)
-    );
+    const values = services
+      .map(
+        service =>
+          `(${shopId}, '${service.name}', '${service.image}', '${service.type}')`
+      )
+      .join(", ");
+
     const servicesQuery = await pool.query(
       `INSERT INTO service VALUES ${values} RETURNING *`
     );
@@ -26,12 +26,10 @@ const shopInfos = {
   },
   /** Insert multiple goals */
   insertMultipleGoals: async (shopId, goals) => {
-    let values = "";
-    goals.forEach(
-      (goal, i) =>
-        (values +=
-          (i == 0 ? "" : ", ") + `(${shopId}, '${goal.name}', ${goal.amount})`)
-    );
+    const values = goals
+      .map(goal => `(${shopId}, '${goal.name}', ${goal.amount})`)
+      .join(", ");
+
     const servicesQuery = await pool.query(
       `INSERT INTO goal VALUES ${values} RETURNING *`
     );

@@ -58,13 +58,12 @@ const transactionQueries = {
    * @param shopId
    */
   insertFromIds: async (shopId, date, products) => {
-    let values = "";
-    products.forEach(
-      (product, i) =>
-        (values +=
-          (i == 0 ? "" : ", ") +
-          `($1, ${parseInt(shopId)}, ${product.id}, ${product.price})`)
-    );
+    const values = products
+      .map(
+        product => `($1, ${parseInt(shopId)}, ${product.id}, ${product.price})`
+      )
+      .join(", ");
+
     const premiumsQuery = await pool.query(
       `INSERT INTO shop_transaction VALUES ${values} RETURNING *`,
       [date]
@@ -75,12 +74,10 @@ const transactionQueries = {
   insertRenewals: async (userId, renewals, transactionDate) => {
     if (renewals.length === 0) return true;
     else {
-      let values = "";
-      renewals.forEach(
-        (shop, i) =>
-          (values += (i == 0 ? "" : ", ") + `(${shop.id}, '${userId}', $1)`)
-      );
-      console.log(values);
+      const values = renewals
+        .map(shop => `(${shop.id}, '${userId}', $1)`)
+        .join(", ");
+
       await pool.query(`INSERT INTO renewal VALUES ${values}`, [
         transactionDate
       ]);

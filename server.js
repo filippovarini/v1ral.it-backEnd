@@ -86,7 +86,7 @@ app.get("/maintenance", async (req, res) => {
     const status = await adminQueries.getMaintenanceStatus();
     res.json({
       success: true,
-      maintenance: status === "on" && req.host !== "localhost"
+      maintenance: status === "on" && req.hostname !== "localhost"
     });
   } catch (e) {
     console.log(e);

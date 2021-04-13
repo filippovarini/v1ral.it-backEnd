@@ -277,7 +277,8 @@ router.get("/shop/:id", async (req, res) => {
 });
 
 /** User Checkout info
- * sends back shops and whether the user is logged in or has a challenger
+ * sends back shops and whether the user is logged in or has a challenger.
+ * Gets user object from logged info or from req.session
  */
 router.get("/checkout/user", checkCart, async (req, res) => {
   try {
@@ -287,7 +288,9 @@ router.get("/checkout/user", checkCart, async (req, res) => {
       req.session.loginId && req.session.loginId[0] === "@"
     );
     const challenger = req.session.challenger;
-    const user = isLogged ? await getUser(req.session.loginId.slice(1)) : null;
+    const user = isLogged
+      ? await getUser(req.session.loginId.slice(1))
+      : req.session.newUser;
     res.json({ success: true, items, isLogged, challenger, user });
   } catch (e) {
     console.log(e);

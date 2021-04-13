@@ -14,10 +14,8 @@ const productsQueries = {
     VALUES ($1, $2, $3) RETURNING id`,
       [name, description, price]
     );
-    let values = "";
-    product.images.forEach(
-      (image, i) => (values += (i == 0 ? "" : ", ") + `($1, '${image}')`)
-    );
+    const values = images.map(image => `($1, '${image}')`).join(", ");
+
     await pool.query(
       `
     INSERT INTO product_image
