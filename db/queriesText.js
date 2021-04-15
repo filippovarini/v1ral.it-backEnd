@@ -9,6 +9,15 @@ const queriesText = {
    * @param filters filters string
    */
   shopList: async (queryParams, filters) => {
+    const stats = `
+    (SELECT shop, SUM(amount) AS disruption_index FROM goal GROUP BY shop) AS goals 
+    NATURAL LEFT JOIN 
+    (SELECT 
+      shop, 
+      SUM(price) AS financed_so_far, 
+      COUNT(*) AS premiums, 
+      LEAST(COALESCE(CAST(COUNT(CASE WHEN "user" = $1 THEN "user" END) AS INT), 0), 1) AS alreadyBought
+    FROM premium GROUP BY shop) AS premiums`;
     const query = await pool.query(
       `
       SELECT 
@@ -22,14 +31,10 @@ const queriesText = {
         shop.connectedid,
         shop.currentprice,
         shop.initialprice,
-        COALESCE(SUM(info.amount), 0) AS disruption_index,
-        COALESCE(SUM(info.price), 0) AS financed_so_far,
-        COALESCE(COUNT(DISTINCT info."user"), 0) AS premiums,
-        CASE WHEN COALESCE(CAST(COUNT(CASE WHEN info."user" = $1 THEN info."user" END) AS INT), 0) = 0 THEN 0 ELSE 1 END AS alreadyBought
-      FROM shop LEFT JOIN (goal NATURAL JOIN premium) AS info
-        ON shop.id = info.shop
-      ${filters || " "}  
-      GROUP BY shop.id`,
+        stats.*
+      FROM shop LEFT JOIN (${stats}) AS stats
+        ON shop.id = stats.shop
+      ${filters || " "} `,
       queryParams
     );
     return query;

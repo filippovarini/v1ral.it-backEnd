@@ -83,8 +83,6 @@ router.post(
   validatePayment,
   async (req, res) => {
     try {
-      console.log("payment intent");
-      console.log(req.session.checkout);
       // total amount asked in cents
       let total =
         req.session.checkout.reduce((acc, item) => acc + item.price, 0) * 100;
@@ -158,8 +156,6 @@ router.post(
  * - saves premiums with transaction date
  * - deletes cart session
  * @param intentId
- * @parma req.items with all the info
- * @param newUser
  * @param transferGroupId
  */
 router.post(
@@ -168,6 +164,7 @@ router.post(
   sendTransfer,
   postUser,
   async (req, res) => {
+    const newUserId = req.session.newUser ? req.session.newUser.username : null;
     const transactionDate = new Date();
     const transactionId = transactionDate.getTime();
     const userId = req.session.loginId.slice(1);
@@ -179,9 +176,6 @@ router.post(
     const renewalsToInsert = req.session.checkout.filter(
       item => item.cartType === "renewal"
     );
-
-    console.log(premiumsToInsert);
-    console.log(renewalsToInsert);
 
     try {
       await premiumQueries.insertFromIds(
@@ -199,13 +193,14 @@ router.post(
       req.session.checkout = null;
       req.session.shopSI = null;
       req.session.challenger = null;
+      req.session.newUser = null;
       res.json({ success: true, transactionId });
     } catch (e) {
       console.log(e);
       await premiumQueries.deleteFromTransactionDate(transactionDate);
-      if (req.body.newUser) {
+      if (newUserId) {
         // just created new user
-        await userQueries.delete(req.body.newUser.username);
+        await userQueries.delete(newUserId);
       }
       res.status(500).json({
         success: false,

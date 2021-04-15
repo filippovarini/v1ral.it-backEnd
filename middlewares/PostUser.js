@@ -1,46 +1,22 @@
 const bcrypt = require("bcrypt");
+// classes
+const UserInserter = require("../classes/UserInserter");
 
 const userQueries = require("../db/queries/users");
 
 /**
  * On checkout, create new user, if the user is new.
- * @param newUser
+ * @param req.session.newUser
  */
 const postUser = async (req, res, next) => {
-  if (!req.body.newUser) {
+  if (!req.session.newUser || !req.session.newUser.username) {
     next();
   } else {
-    // new user
-    const {
-      username,
-      email,
-      type,
-      challenger,
-      city,
-      province,
-      street,
-      postcode,
-      profileUrl,
-      psw,
-      reason
-    } = req.body.newUser;
-
     try {
-      const hashed = await bcrypt.hash(psw, 10);
-      const newUser = await userQueries.register([
-        username,
-        email,
-        type,
-        challenger,
-        city,
-        province,
-        street,
-        postcode,
-        profileUrl,
-        hashed,
-        reason
-      ]);
-      req.session.loginId = `@${newUser.rows[0].username}`;
+      const userInserter = new UserInserter(req.session.newUser);
+      const user = await userInserter.save("user");
+      req.session.loginId = `@${user.username}`;
+      req.session.newUser = null;
       next();
     } catch (e) {
       res.status(500).json({
