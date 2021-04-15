@@ -3,3 +3,5 @@
 - get sessions
 - give a look at SOURCE TRANSACTION (STRIPE BALANCE)
 - check that when saving the transaction, you save the current price, not the acutal!
+
+- !!!! make in table initial and current price double

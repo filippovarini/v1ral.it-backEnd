@@ -3,6 +3,11 @@ const path = require("path");
 const session = require("express-session");
 const mongoose = require("mongoose");
 const MongoDBSession = require("connect-mongodb-session")(session);
+const sessionSecret = require("./keys/dev").session;
+const priceIncreaseSetUp = require("./priceIncrease/setUp");
+
+// run scheduler for price increase
+priceIncreaseSetUp();
 
 // db queries
 const adminQueries = require("./db/queries/admin");
@@ -19,8 +24,6 @@ const shopRouter = require("./routes/Shop");
 const transactionRouter = require("./routes/Transaction");
 const adminRouter = require("./routes/Admin");
 const generalUserRouter = require("./routes/GeneralUser");
-
-const sessionSecret = require("./keys/dev").session;
 
 const app = express();
 const port = 5000;
