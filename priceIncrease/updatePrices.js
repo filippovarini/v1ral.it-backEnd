@@ -17,18 +17,20 @@ const updatePrices = async firedate => {
 
   // get new price
   const intPrice =
-    "CAST(shops.currentprice + (shops.passes_sold - city_avg) AS INT)  AS new_price";
-  const floatPrice =
-    "shops.currentprice + (shops.passes_sold - city_avg)  AS new_price";
+    "CAST(shops.currentprice + (shops.passes_sold - city_avg) AS INT)";
+  const floatPrice = "shops.currentprice + (shops.passes_sold - city_avg)";
+
+  const price = `GREATEST(${intPrice}, shops.initialprice) AS new_price`;
 
   const updateTable = `
     SELECT 
         *, 
         shops.passes_sold - city_avg AS increase, 
-        ${intPrice}
+        ${price}
     FROM    (SELECT 
                 shop.id, 
                 shop.currentprice, 
+                shop.initialprice,
                 shop.city, 
                 COALESCE(COUNT(premiums.*), 0) AS passes_sold
             FROM shop LEFT JOIN ( SELECT * 
