@@ -278,6 +278,25 @@ router.put("/passes", checkAuth, async (req, res) => {
   }
 });
 
+/** Adds priviledge (service)
+ * @param service
+ */
+router.put("/service", checkAuth, async (req, res) => {
+  try {
+    await servicesAndGoals.insertMultipleServices(
+      req.session.loginId.slice(1),
+      [req.body.service]
+    );
+    res.json({ success: true });
+  } catch (e) {
+    console.log(e);
+    res.json({
+      serverError: true,
+      message: "Errore nell'aggiornamento delle informazioni"
+    });
+  }
+});
+
 /** Reset shop search SI */
 router.delete("/shopSI", (req, res) => {
   req.session.shopSI = null;
