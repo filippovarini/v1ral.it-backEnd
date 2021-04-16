@@ -15,7 +15,7 @@ const queriesText = {
     (SELECT 
       shop, 
       SUM(price) AS financed_so_far, 
-      COUNT(*) AS premiums, 
+      COUNT(*) AS premiums,
       LEAST(COALESCE(CAST(COUNT(CASE WHEN "user" = $1 THEN "user" END) AS INT), 0), 1) AS alreadyBought
     FROM premium GROUP BY shop) AS premiums`;
     const query = await pool.query(

@@ -1,7 +1,3 @@
-const shopQueries = require("../../db/queries/shop/shops");
-const shopSearchQueries = require("../../db/queries/shop/shopSearch");
-const productsQueries = require("../../db/queries/products");
-
 /** Validates user transaction by getting the items in the cart and creating
  * a checkout session
  * Called after CHECKCART (which validates the cart and gets the items)

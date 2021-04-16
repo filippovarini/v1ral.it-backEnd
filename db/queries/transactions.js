@@ -51,6 +51,19 @@ const transactionQueries = {
     const formattedProducts = formatProducts(products.rows);
     return formattedProducts;
   },
+  /** Checks that all passes in the user cart have not been sold out */
+  checkShopPassesAvailability: async ids => {
+    const passesLeft = await pool.query(
+      `
+    SELECT (shop.maxpremiums - COUNT(*)) AS passeseleft 
+    FROM shop JOIN premium 
+      ON shop.id = premium.shop 
+    WHERE id = ANY ($1)
+    GROUP BY shop.id`,
+      [ids]
+    );
+    return !passesLeft.rows.some(row => row.passeseleft < 0);
+  },
   /**
    * Insert multiple rows after checkout
    * @param products contains [id]

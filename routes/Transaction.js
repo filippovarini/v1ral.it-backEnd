@@ -18,6 +18,7 @@ const checkCartUpdatable = require("../middlewares/Cart/CheckCartUpdatable");
 const validatePayment = require("../middlewares/Transactions/ValidatePayment");
 const ChecknItentSucceeded = require("../middlewares/ChecknItentSucceeded");
 const sendTransfer = require("../middlewares/Transactions/SendTransfers");
+const checkAvailability = require("../middlewares/Transactions/CheckAvailability");
 
 // queries
 const premiumQueries = require("../db/queries/premiums");
@@ -81,6 +82,7 @@ router.post(
   "/paymentIntent/user",
   validateCart,
   validatePayment,
+  checkAvailability,
   async (req, res) => {
     try {
       // total amount asked in cents
@@ -120,7 +122,9 @@ router.post(
 router.post(
   "/paymentIntent/shop",
   checkShop,
+  validateCart,
   validatePayment,
+  checkAvailability,
   async (req, res) => {
     try {
       // total amount asked in cents

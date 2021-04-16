@@ -259,6 +259,25 @@ router.put("/updatePsw", checkAuth, async (req, res) => {
   }
 });
 
+/** Updates available passes
+ * @param newPasses
+ */
+router.put("/passes", checkAuth, async (req, res) => {
+  try {
+    await pool.query(
+      "UPDATE shop SET maxpremiums = maxpremiums + $1 WHERE id = $2",
+      [req.body.newPasses, req.session.loginId.slice(1)]
+    );
+    res.json({ success: true });
+  } catch (e) {
+    console.log(e);
+    res.json({
+      serverError: true,
+      message: "Errore nell'aggiornamento delle informazioni"
+    });
+  }
+});
+
 /** Reset shop search SI */
 router.delete("/shopSI", (req, res) => {
   req.session.shopSI = null;
