@@ -246,9 +246,6 @@ router.get("/shop/:id", async (req, res) => {
           ))
       );
     }
-
-    console.log(images);
-
     res.json({
       success: true,
       shop,

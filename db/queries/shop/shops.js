@@ -106,18 +106,11 @@ const shopsQueries = {
   },
   /** Delete image from gallery */
   deleteImage: async (url, shopId) => {
-    console.log(url);
-    console.log(shopId);
     await pool.query("DELETE FROM shop_image WHERE shop = $1 AND url = $2", [
       shopId,
       url
     ]);
   }
 };
-
-shopsQueries.deleteImage(
-  "https://i.picsum.photos/id/939/200/300.jpg?hmac=cj4OIUh8I6eW-hwT25m1_dCA6ZsAmSYixKCgsbZZmXk",
-  17
-);
 
 module.exports = shopsQueries;
