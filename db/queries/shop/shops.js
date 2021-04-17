@@ -38,6 +38,22 @@ const shopsQueries = {
       return shops.rows[0].psw;
     }
   },
+  /** Get shop gallery images */
+  getImages: async shopId => {
+    const images = await pool.query(
+      "SELECT url FROM shop_image WHERE shop = $1",
+      [shopId]
+    );
+    return images.rows.map(row => row.url);
+  },
+  /** Add image to shop_image
+   * @param urls array of urls to add
+   * @param shopId
+   */
+  postImages: async (urls, shopId) => {
+    let values = urls.map(url => `($1, '${url}')`).join(", ");
+    await pool.query(`INSERT INTO shop_image VALUES ${values}`, [shopId]);
+  },
   register: async info => {
     const query = await pool.query(
       `
@@ -87,7 +103,21 @@ const shopsQueries = {
     );
     if (updatedInfo.rowCount !== 1) throw "Username is not unique or valid";
     else return updatedInfo.rows[0];
+  },
+  /** Delete image from gallery */
+  deleteImage: async (url, shopId) => {
+    console.log(url);
+    console.log(shopId);
+    await pool.query("DELETE FROM shop_image WHERE shop = $1 AND url = $2", [
+      shopId,
+      url
+    ]);
   }
 };
+
+shopsQueries.deleteImage(
+  "https://i.picsum.photos/id/939/200/300.jpg?hmac=cj4OIUh8I6eW-hwT25m1_dCA6ZsAmSYixKCgsbZZmXk",
+  17
+);
 
 module.exports = shopsQueries;

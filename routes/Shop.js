@@ -297,6 +297,39 @@ router.put("/service", checkAuth, async (req, res) => {
   }
 });
 
+/** Add image to image gallery (shop_image)
+ * @param url
+ */
+router.put("/addImage", checkAuth, async (req, res) => {
+  try {
+    const shopId = req.session.loginId.slice(1);
+    console.log(`Shop ${shopId} is posting an image`);
+    await shopQueries.postImages([req.body.url], shopId);
+    res.json({ success: true });
+  } catch (e) {
+    console.log(e);
+    res.json({ serverError: true, message: "Errore nel caricare l'immagine" });
+  }
+});
+
+/** Deletes image from gallery
+ * @param url
+ */
+router.delete("/image", checkAuth, async (req, res) => {
+  try {
+    const shopId = req.session.loginId.slice(1);
+    console.log(`Sho ${shopId} is deleting an image`);
+    await shopQueries.deleteImage(req.body.url, shopId);
+    res.json({ success: true });
+  } catch (e) {
+    console.log(e);
+    res.json({
+      serverError: true,
+      message: "Errore nell'eliminazione dell'immagine"
+    });
+  }
+});
+
 /** Reset shop search SI */
 router.delete("/shopSI", (req, res) => {
   req.session.shopSI = null;

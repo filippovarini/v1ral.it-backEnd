@@ -223,6 +223,7 @@ router.get("/shop/:id", async (req, res) => {
     const services = await servicesAndGoals.servicesFromId(req.params.id);
     const goals = await servicesAndGoals.goalsFromId(req.params.id);
     const cases = await shops.getCases(req.params.id);
+    const images = await shops.getImages(req.params.id);
 
     if (req.session.loginId && req.session.loginId.slice(1) === req.params.id) {
       // dashboard
@@ -246,10 +247,13 @@ router.get("/shop/:id", async (req, res) => {
       );
     }
 
+    console.log(images);
+
     res.json({
       success: true,
       shop,
       services,
+      images,
       goals,
       cases,
       added,

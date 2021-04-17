@@ -130,3 +130,10 @@ CREATE TABLE "spam"
     shop SERIAL NOT NULL,
     status VARCHAR(32) NOT NULL
 )
+
+CREATE TABLE "shop_image"
+(
+    shop SERIAL NOT NULL,
+    url VARCHAR(512) NOT NULL,
+    PRIMARY KEY (url, shop)
+)
