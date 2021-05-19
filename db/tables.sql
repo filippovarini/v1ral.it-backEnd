@@ -1,6 +1,62 @@
 CREATE TABLE "shop"
 (
     id SERIAL NOT NULL PRIMARY KEY,
+
+    name VARCHAR(128) NOT NULL,
+    category VARCHAR(64) NOT NULL,
+    bio VARCHAR(512),
+    logo VARCHAR(512) NOT NULL,
+    background VARCHAR(512) NOT NULL,
+
+    phone VARCHAR(16),
+    insta_link VARCHAR(512),
+    fb_link VARCHAR(512),
+    website VARCHAR(512),
+
+    owner_name VARCHAR(64) NOT NULL,
+    owner_phone VARCHAR(16) NOT NULL,
+    email VARCHAR(256) NOT NULL,
+    psw VARCHAR(256) NOT NULL,
+    connected_id VARCHAR(256),
+
+    city VARCHAR(64) NOT NULL,
+    province VARCHAR(64) NOT NULL,
+    street VARCHAR(256) NOT NULL,
+    postcode INTEGER NOT NULL,
+
+    stocks_number INTEGER NOT NULL,
+    initial_price REAL NOT NULL,
+    current_price REAL NOT NULL,
+    stock_month_duration INTEGER NOT NULL,
+    clicks INTEGER DEFAULT 0
+)
+
+CREATE TABLE "shop_image"
+(
+    shop SERIAL NOT NULL,
+    url VARCHAR(512) NOT NULL,
+    PRIMARY KEY (url, shop)
+)
+
+CREATE TABLE "shop_tag"
+(
+    shop SERIAL NOT NULL,
+    name VARCHAR(32) NOT NULL,
+    PRIMARY KEY (shop, name)
+)
+
+CREATE TABLE "priviledge"
+(
+    shop SERIAL NOT NULL,
+    title VARCHAR(64) NOT NULL,
+    description VARCHAR(256) NOT NULL,
+    type VARCHAR(16) NOT NULL,
+    PRIMARY KEY (shop, title)
+)
+
+CREATE TABLE "shop_old"
+(
+    id SERIAL NOT NULL PRIMARY KEY,
     name VARCHAR(128) NOT NULL,
     category VARCHAR(64) NOT NULL,
     pass_month_duration INTEGER NOT NULL,
@@ -19,6 +75,9 @@ CREATE TABLE "shop"
     logoURL VARCHAR(512) NOT NULL,
     psw VARCHAR(256) NOT NULL
 );
+
+
+
 
 CREATE TABLE "user"
 (
@@ -129,11 +188,4 @@ CREATE TABLE "spam"
     date TIMESTAMP NOT NULL,
     shop SERIAL NOT NULL,
     status VARCHAR(32) NOT NULL
-)
-
-CREATE TABLE "shop_image"
-(
-    shop SERIAL NOT NULL,
-    url VARCHAR(512) NOT NULL,
-    PRIMARY KEY (url, shop)
 )

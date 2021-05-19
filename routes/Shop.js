@@ -13,103 +13,99 @@ const checkUpdatable = require("../middlewares/CheckUpdatable");
 
 // db queries
 const shopQueries = require("../db/queries/shop/shops");
+const priviledgesQueries = require("../db/queries/priviledges");
 const servicesAndGoals = require("../db/queries/servicesAndGoals");
 
-/** Register shop from registerSession saved before connecting account.
- * Also check that the account id passed to get to the shop/register/done/:id
- * page is valid
- * @param connectedId id of new connected account passed as query param in shop/
- * register/done/:id
+/**
+ * Register shop from information in backend. The information is not complete
+ * for the shop to be visible online, but at least for now it is online
+ * @param stock
+ * @param credentials
+ * @param profile
  */
 router.post("/register", async (req, res) => {
   try {
-    const registerSession = req.session.registerSession;
-    if (
-      registerSession &&
-      registerSession.shop &&
-      registerSession.services &&
-      registerSession.goals &&
-      registerSession.shop.connectedId === req.body.connectedId
-    ) {
-      const {
-        name,
-        category,
-        maxPremiums,
-        initialPrice,
-        currentPrice,
-        passExpiry,
-        clicks,
-        bio,
-        email,
-        city,
-        province,
-        street,
-        postcode,
-        connectedId,
-        backgroundurl,
-        logourl,
-        psw
-      } = registerSession.shop;
+    console.log(req.body);
+    const { profile, stock, credentials } = req.body;
+    const { name, category, bio, logourl, backgroundurl } = profile;
+    const {
+      owner_name,
+      owner_phone,
+      email,
+      psw,
+      city,
+      street,
+      province,
+      postcode
+    } = credentials;
+    const {
+      priviledges,
+      stockNumber,
+      initialPrice,
+      stockMonthDuration
+    } = stock;
 
-      const hashed = await bcrypt.hash(psw, 10);
-      const newShopUser = await shopQueries.register([
+    const hashed = await bcrypt.hash(psw, 10);
+
+    const registerQuery = await pool.query(
+      `
+    INSERT INTO shop (name, 
+      category, 
+      bio, 
+      logo, 
+      background, 
+      owner_name, 
+      owner_phone,
+      email,
+      psw,
+      city,
+      province,
+      street,
+      postcode,
+      stocks_number,
+      initial_price,
+      current_price,
+      stock_month_duration)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+    RETURNING id, name, logo, street, city, email`,
+      [
         name,
         category,
-        maxPremiums,
-        initialPrice,
-        currentPrice,
-        passExpiry,
-        clicks,
         bio,
+        logourl,
+        backgroundurl,
+        owner_name,
+        owner_phone,
         email,
+        hashed,
         city,
         province,
         street,
         postcode,
-        connectedId,
-        backgroundurl,
-        logourl,
-        hashed
-      ]);
-      await servicesAndGoals.insertMultipleServices(
-        newShopUser.id,
-        registerSession.services
-      );
-      await servicesAndGoals.insertMultipleGoals(
-        newShopUser.id,
-        registerSession.goals
-      );
-      // check charges enabled
-      const chargesEnabled = await checkChargesEnabled(req.body.connectedId);
-      req.session.loginId = `#${newShopUser.id}`;
-      req.session.registerSession = null;
-      res.json({
-        success: true,
-        id: newShopUser.id,
-        name: newShopUser.name,
-        address: `${newShopUser.street}, ${newShopUser.city}`,
-        email: newShopUser.email,
-        userProfile: newShopUser.logourl,
-        chargesEnabled
-      });
-    } else {
-      // no registerSession
-      const connectedUsers = await pool.query(
-        "SELECT * FROM shop WHERE connectedId = $1",
-        [req.body.connectedId]
-      );
-      if (connectedUsers.rowCount !== 0) {
-        const chargesEnabled = await checkChargesEnabled(req.body.connectedId);
-        res.json({ success: true, alreadyPresent: true, chargesEnabled });
-      } else
-        res.json({
-          success: false,
-          serverError: false,
-          unauthorized: true,
-          message:
-            "Accesso negato perchè non esiste una sessione di registrazione oppure l'id dello stripe account è invalido"
-        });
-    }
+        stockNumber,
+        initialPrice,
+        initialPrice,
+        stockMonthDuration
+      ]
+    );
+
+    const newShopUser = registerQuery.rows[0];
+
+    await priviledgesQueries.insertMultiplePriviledges(
+      newShopUser.id,
+      priviledges
+    );
+
+    req.session.loginId = `#${newShopUser.id}`;
+    res.json({
+      success: true,
+      id: newShopUser.id,
+      name: newShopUser.name,
+      address: `${newShopUser.street}, ${newShopUser.city}`,
+      email: newShopUser.email,
+      userProfile: newShopUser.logo,
+      chargesEnabled: false
+    });
   } catch (e) {
     console.log(e);
     res.status(500).json({
