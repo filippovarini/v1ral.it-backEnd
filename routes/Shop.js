@@ -157,6 +157,31 @@ router.post("/login", async (req, res) => {
   }
 });
 
+/** Stores the new connected_id to the user. Only changes the connected id if
+ * it has not been already stored!
+ * @param connectedId
+ * @param returnPath
+ */
+router.put("/connected", async (req, res) => {
+  try {
+    console.log("shit");
+    if (req.session.loginId && req.session.loginId[0] === "#") {
+      const shop = await shopQueries.getProfile(req.session.loginId.slice(1));
+      if (shop.connected_id === null)
+        await shopQueries.update(req.session.loginId.slice(1), {
+          connected_id: req.body.connectedId
+        });
+      res.redirect(req.body.returnPath);
+    } else res.redirect("/");
+  } catch (e) {
+    console.log(e);
+    res.json({
+      serverError: true,
+      message: "Errore nell'aggiornare le informazioni dell'account"
+    });
+  }
+});
+
 /**
  * Update shopSI:
  * {[si to be updated]: text - null (deactivated)}

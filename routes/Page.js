@@ -68,7 +68,7 @@ router.get("/header", checkAuth, async (req, res) => {
           success: true,
           name: "#" + shop.name,
           id: shop.id,
-          userProfile: shop.logourl,
+          userProfile: shop.logo,
           email: shop.email,
           address: `${shop.street}, ${shop.city}`
         });
@@ -375,6 +375,51 @@ router.get("/user/:username", async (req, res) => {
 /* LOG IN - REGISTER */
 router.get("/login", checkNotAuth, (req, res) => {
   res.json({ success: true });
+});
+
+/** Access to register done page is only given to shops that either don't have
+ * a connected id yet or don't have charges enabled. (if they have both they can
+ * still access it as to buy products) This route checks that and
+ * returns the connectedId and loginId
+ */
+router.get("/registerDone", async (req, res) => {
+  try {
+    if (req.session.loginId && req.session.loginId[0] === "#") {
+      let connectedId = null;
+      let chargesEnabled = null;
+      if (req.session.connectingId) {
+        // store new connected id
+        connectedId = req.session.connectingId;
+        req.session.connectingId = null;
+        await shops.update(req.session.loginId.slice(1), {
+          connected_id: connectedId
+        });
+        chargesEnabled = false;
+      } else {
+        const shop = await shops.getProfile(req.session.loginId.slice(1));
+        connectedId = shop.connected_id;
+        chargesEnabled = Boolean(
+          shop.connected_id && (await checkChargesEnabled(shop.connected_id))
+        );
+      }
+
+      res.json({
+        success: true,
+        loginId: req.session.loginId.slice(1),
+        connectedId,
+        chargesEnabled
+      });
+    } else {
+      console.log("unauthorized");
+      res.json({ unauthorized: true, message: "Accesso negato" });
+    }
+  } catch (e) {
+    console.log(e);
+    res.json({
+      success: false,
+      message: "Errore nel recupero delle informazioni relative ai pagamenti"
+    });
+  }
 });
 
 /** Get user info for settings */

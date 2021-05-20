@@ -54,33 +54,6 @@ const shopsQueries = {
     let values = urls.map(url => `($1, '${url}')`).join(", ");
     await pool.query(`INSERT INTO shop_image VALUES ${values}`, [shopId]);
   },
-  register: async info => {
-    const query = await pool.query(
-      `
-      INSERT INTO shop(
-        "name",
-        category,
-        maxPremiums,
-        initialPrice,
-        currentPrice,
-        pass_month_duration,
-        clicks,
-        bio,
-        email,
-        city,
-        province,
-        street,
-        postcode,
-        connectedid ,
-        backgroundURL,
-        logoURL,
-        psw)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-      RETURNING id, name, logourl`,
-      info
-    );
-    return query.rows[0];
-  },
   /** Increments view count by 1 */
   viewed: async id => {
     await pool.query("UPDATE shop SET clicks = clicks + 1 WHERE id = $1 ", [

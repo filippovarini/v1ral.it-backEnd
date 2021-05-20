@@ -57,8 +57,8 @@ router.post("/dashboard", async (req, res) => {
   try {
     const redirect_url =
       process.env.NODE_ENV === "production"
-        ? `https://v1ral.it/${req.body.redirectPath}`
-        : `http://localhost:3000/${req.body.redirectPath}`;
+        ? `https://v1ral.it${req.body.redirectPath}`
+        : `http://localhost:3000${req.body.redirectPath}`;
 
     const link = await stripe.accounts.createLoginLink(req.body.connectedId, {
       redirect_url
@@ -257,31 +257,31 @@ router.post(
   }
 );
 
-/** Store new shop user in a register session and create connected account,
- * sending back the new link
- * @param registerSession {shop, goals, services}
+/** Connect account to stripe, sending back the new link
+ * @param refreshPath path where to bring the user on refresh
+ * @param returnPath path where to bring the user on return (success)
+ * @param id id of shop
  * @todo pre-compile business profile
  */
 router.post("/connect", async (req, res) => {
   try {
-    req.session.registerSession = req.body.registerSession;
     const account = await stripe.accounts.create({
       type: CONNECTED_ACCOUNT_TYPE,
       country: "IT",
       default_currency: "EUR"
     });
 
-    req.session.registerSession.shop.connectedId = account.id;
+    req.session.connectingId = account.id;
 
     const refresh_url =
       process.env.NODE_ENV === "production"
-        ? `https://www.v1ral.it/shop/register/getPayed`
-        : `http://localhost:3000/shop/register/getPayed`;
+        ? `https://www.v1ral.it${req.body.refreshPath}`
+        : `http://localhost:3000${req.body.refreshPath}`;
 
     const return_url =
       process.env.NODE_ENV === "production"
-        ? `https://www.v1ral.it/shop/register/done/${account.id}`
-        : `http://localhost:3000/shop/register/done/${account.id}`;
+        ? `https://www.v1ral.it${req.body.returnPath}`
+        : `http://localhost:3000${req.body.returnPath}`;
 
     const accountLinks = await stripe.accountLinks.create({
       account: account.id,
