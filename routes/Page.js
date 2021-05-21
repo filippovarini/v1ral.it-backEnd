@@ -11,19 +11,18 @@ const checkNotAuth = require("../middlewares/CheckNotAuth");
 const checkShop = require("../middlewares/CheckShop");
 
 // queries
-const cases = require("../db/queries/cases");
 const shops = require("../db/queries/shop/shops");
 const shopSearchQueries = require("../db/queries/shop/shopSearch");
+const priviledgesQueries = require("../db/queries/priviledges");
+const cases = require("../db/queries/cases");
 const users = require("../db/queries/users");
 const premiums = require("../db/queries/premiums");
-const servicesAndGoals = require("../db/queries/servicesAndGoals");
 const products = require("../db/queries/products");
 const transactions = require("../db/queries/transactions");
 
 // helper functions
 const getUserObject = require("../functions/getUserProfile");
 const checkChargesEnabled = require("../functions/connectChargesEnabled");
-/** Checks if the user viewing the shop has should see it as added or not */
 const isInCart = (session, shopId) => {
   return Boolean(
     session.cart && session.cart.some(cartItem => cartItem.id === shopId)
@@ -88,9 +87,9 @@ router.get("/header", checkAuth, async (req, res) => {
 });
 
 /* HOME */
-router.get("/home/quickFacts", async (req, res) => {
+router.get("/home/quickFacts", async (_, res) => {
   try {
-    const rtIndex = await cases.avgRt();
+    const rtIndex = 0;
     const totalCases = await cases.total();
     const dailyCases = await cases.daily();
     const financedShops = await cases.financedShops();
@@ -143,13 +142,25 @@ router.get("/home/users", async (req, res) => {
   }
 });
 
-/** Gets price increase of shops */
+/** Get list of shops and their value increase */
 router.get("/home/priceIncrease", async (_, res) => {
   try {
     const shops = await pool.query(
-      "SELECT currentprice, initialprice, name, logourl FROM shop"
+      "SELECT current_price, initial_price, name, logo FROM shop"
     );
-    res.json({ success: true, shops: shops.rows });
+
+    // turn to camelCase
+    res.json({
+      success: true,
+      shops: shops.rows.map(shop => {
+        return {
+          name: shop.name,
+          logo: shop.logo,
+          currentPrice: shop.current_price,
+          initialPrice: shop.initial_price
+        };
+      })
+    });
   } catch (e) {
     console.log(e);
     res.json({
@@ -159,25 +170,34 @@ router.get("/home/priceIncrease", async (_, res) => {
   }
 });
 
-/** Shop search results */
-/** Accessible even without any search identifier */
+/** Shop search results
+ * Accessible even without any search identifier */
 router.get("/shops", async (req, res) => {
   try {
+    // get useId to show alreadyBought or in cart
     const userId =
       req.session.loginId && req.session.loginId[0] === "@"
         ? req.session.loginId.slice(1)
         : null;
+
+    // get shops
     shopList = await shopSearchQueries.getFromSearch(
       userId,
       req.session.shopSI || {}
     );
+
     // search for already bought (make boolean)
-    shopList.forEach(shop => (shop.alreadybought = shop.alreadybought !== 0));
+    shopList.forEach(shop => (shop.alreadyBought = shop.alreadyBought !== 0));
+
     // search for in cart
     if (req.session.cart)
       shopList.forEach(shop => (shop.inCart = isInCart(req.session, shop.id)));
+
+    // get filter materials
     const cities = await shopSearchQueries.getCities();
     const categories = await shopSearchQueries.getCategories();
+
+    // get challenger info
     const challenger = req.session.challenger;
     let challengerViral = null;
     if (challenger) {
@@ -187,6 +207,7 @@ router.get("/shops", async (req, res) => {
       );
       challengerViral = challengerProfile.rows[0].type === "viral";
     }
+
     res.json({
       success: true,
       shops: shopList,
@@ -210,6 +231,7 @@ router.get("/shops", async (req, res) => {
  * Get shop profile. Could be simple shop profile or dashboard. If dashboard,
  * pass to next.
  * - updates view count of shop if simple shop profile
+ * @todo check valid id (number)
  */
 router.get("/shop/:id", async (req, res) => {
   try {
@@ -220,9 +242,7 @@ router.get("/shop/:id", async (req, res) => {
       totalSpent = null;
 
     const shop = await shops.getProfile(req.params.id);
-    const services = await servicesAndGoals.servicesFromId(req.params.id);
-    const goals = await servicesAndGoals.goalsFromId(req.params.id);
-    const cases = await shops.getCases(req.params.id);
+    const priviledges = await priviledgesQueries.getFromId(req.params.id);
     const images = await shops.getImages(req.params.id);
 
     if (req.session.loginId && req.session.loginId.slice(1) === req.params.id) {
@@ -231,7 +251,7 @@ router.get("/shop/:id", async (req, res) => {
       totalSpent = await transactions.getShopTransactionTotal(
         req.session.loginId.slice(1)
       );
-      chargesEnabled = await checkChargesEnabled(shop.connectedid);
+      chargesEnabled = await checkChargesEnabled(shop.connected_id);
     } else {
       // just visited the profile (update viewed)
       await shops.viewed(req.params.id);
@@ -249,9 +269,8 @@ router.get("/shop/:id", async (req, res) => {
     res.json({
       success: true,
       shop,
-      services,
+      priviledges,
       images,
-      goals,
       cases,
       added,
       alreadyBought,
@@ -380,24 +399,24 @@ router.get("/login", checkNotAuth, (req, res) => {
 /** Access to register done page is only given to shops that either don't have
  * a connected id yet or don't have charges enabled. (if they have both they can
  * still access it as to buy products) This route checks that and
- * returns the connectedId and loginId
+ * returns the connected_id and loginId
  */
 router.get("/registerDone", async (req, res) => {
   try {
     if (req.session.loginId && req.session.loginId[0] === "#") {
-      let connectedId = null;
+      let connected_id = null;
       let chargesEnabled = null;
       if (req.session.connectingId) {
         // store new connected id
-        connectedId = req.session.connectingId;
+        connected_id = req.session.connectingId;
         req.session.connectingId = null;
         await shops.update(req.session.loginId.slice(1), {
-          connected_id: connectedId
+          connected_id: connected_id
         });
         chargesEnabled = false;
       } else {
         const shop = await shops.getProfile(req.session.loginId.slice(1));
-        connectedId = shop.connected_id;
+        connected_id = shop.connected_id;
         chargesEnabled = Boolean(
           shop.connected_id && (await checkChargesEnabled(shop.connected_id))
         );
@@ -406,7 +425,7 @@ router.get("/registerDone", async (req, res) => {
       res.json({
         success: true,
         loginId: req.session.loginId.slice(1),
-        connectedId,
+        connected_id,
         chargesEnabled
       });
     } else {

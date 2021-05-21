@@ -17,13 +17,6 @@ const casesQueries = {
     );
     return formatDates(cases.rows);
   },
-  avgRt: async () => {
-    const avgRt = await pool.query(
-      'SELECT CAST(COUNT(*) AS FLOAT) / CAST(COUNT(DISTINCT challenger) AS FLOAT) AS avg\
-              FROM "user"'
-    );
-    return avgRt.rows[0].avg.toFixed(2);
-  },
   financedShops: async () => {
     const financedShops = await pool.query(
       "SELECT CAST(COUNT(DISTINCT shop) AS INT) AS number FROM premium"

@@ -18,8 +18,8 @@ const shopUpdatable = [
   "province",
   "street",
   "postcode",
-  "backgroundurl",
-  "logourl"
+  "background",
+  "logo"
 ];
 
 /** Checks that the info in req.body.update are all present in the relative

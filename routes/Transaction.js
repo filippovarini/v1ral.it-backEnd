@@ -36,9 +36,9 @@ router.get("/cart", validateCart, (req, res) => {
 });
 
 /** Check if the charges are enabled */
-router.get("/chargesEnabled/:connectedId", async (req, res) => {
+router.get("/chargesEnabled/:connected_id", async (req, res) => {
   try {
-    const chargesEnabled = await checkChargesEnabled(req.params.connectedId);
+    const chargesEnabled = await checkChargesEnabled(req.params.connected_id);
     res.json({ success: true, chargesEnabled });
   } catch (e) {
     console.log(e);
@@ -51,7 +51,7 @@ router.get("/chargesEnabled/:connectedId", async (req, res) => {
 
 /** Gets link for dashboard
  * @param redirectPath path where to redirect
- * @param connectedId
+ * @param connected_id
  */
 router.post("/dashboard", async (req, res) => {
   try {
@@ -60,7 +60,7 @@ router.post("/dashboard", async (req, res) => {
         ? `https://v1ral.it${req.body.redirectPath}`
         : `http://localhost:3000${req.body.redirectPath}`;
 
-    const link = await stripe.accounts.createLoginLink(req.body.connectedId, {
+    const link = await stripe.accounts.createLoginLink(req.body.connected_id, {
       redirect_url
     });
     res.json({ success: true, url: link.url });

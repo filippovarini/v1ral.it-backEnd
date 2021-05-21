@@ -2,22 +2,11 @@ const pool = require("./db");
 const insertBlankShops = require("../functions/insertBlankShops");
 
 const queriesText = {
-  /**
-   * - get shop list
-   * - get if added by user
+  /** Get shop list and additional info
    * @param queryParams username logged
    * @param filters filters string
    */
   shopList: async (queryParams, filters) => {
-    const stats = `
-    (SELECT shop, SUM(amount) AS disruption_index FROM goal GROUP BY shop) AS goals 
-    NATURAL LEFT JOIN 
-    (SELECT 
-      shop, 
-      SUM(price) AS financed_so_far, 
-      COUNT(*) AS premiums,
-      LEAST(COALESCE(CAST(COUNT(CASE WHEN "user" = $1 THEN "user" END) AS INT), 0), 1) AS alreadyBought
-    FROM premium GROUP BY shop) AS premiums`;
     const query = await pool.query(
       `
       SELECT 
@@ -31,14 +20,17 @@ const queriesText = {
         shop.connected_id,
         shop.initial_price,
         shop.current_price,
-        stats.*
-      FROM shop LEFT JOIN (${stats}) AS stats
-        ON shop.id = stats.shop
-      ${filters || " "} `,
+        COALESCE(COUNT(*), 0) AS premiums,
+        LEAST(COALESCE(CAST(COUNT(CASE WHEN "user" = $1 THEN "user" END) AS INT), 0), 1) AS already_bought
+      FROM shop LEFT JOIN premium
+        ON shop.id = premium.shop
+      ${filters || " "}
+      GROUP BY (shop.id)`,
       queryParams
     );
     return query;
   },
+
   /** Get shop profile info */
   shopProfile: async shopId => {
     const query = await pool.query(
@@ -61,11 +53,14 @@ const queriesText = {
         shop.current_price,
         shop.current_price,
         shop.connected_id,
-        COALESCE(SUM(info.price), 0) AS financed_so_far,
-        COALESCE(CAST(COUNT(info."user") AS INT), 0) AS total_premiums,
-        COALESCE(CAST(COUNT(CASE WHEN info.type = 'viral' THEN info."user" END) AS INT), 0) AS viral_premiums
-    FROM shop LEFT JOIN (premium JOIN "user" ON premium."user" = "user".username) AS info
-        ON shop.id = info.shop
+        shop.phone,
+        shop.insta_link,
+        shop.fb_link,
+        shop.website,
+        COALESCE(SUM(premium.price), 0) AS financed_so_far,
+        COALESCE(CAST(COUNT(*) AS INT), 0) AS premiums
+    FROM shop LEFT JOIN premium
+        ON shop.id = premium.shop
     WHERE shop.id = $1
     GROUP BY shop.id`,
       [shopId]

@@ -11,8 +11,8 @@ const validatePayment = async (req, res, next) => {
   const checkout = cartItems.map(item => {
     return {
       id: item.id,
-      price: item.renewalPrice || item.currentprice || item.price,
-      connectedId: item.connectedid,
+      price: item.renewalPrice || item.current_price || item.price,
+      connected_id: item.connected_id,
       cartType: item.cartType
     };
   });

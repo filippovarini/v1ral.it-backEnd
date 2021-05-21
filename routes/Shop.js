@@ -27,7 +27,7 @@ router.post("/register", async (req, res) => {
   try {
     console.log(req.body);
     const { profile, stock, credentials } = req.body;
-    const { name, category, bio, logourl, backgroundurl } = profile;
+    const { name, category, bio, logo, background } = profile;
     const {
       owner_name,
       owner_phone,
@@ -41,7 +41,7 @@ router.post("/register", async (req, res) => {
     const {
       priviledges,
       stockNumber,
-      initialPrice,
+      initial_price,
       stockMonthDuration
     } = stock;
 
@@ -72,8 +72,8 @@ router.post("/register", async (req, res) => {
         name,
         category,
         bio,
-        logourl,
-        backgroundurl,
+        logo,
+        background,
         owner_name,
         owner_phone,
         email,
@@ -83,8 +83,8 @@ router.post("/register", async (req, res) => {
         street,
         postcode,
         stockNumber,
-        initialPrice,
-        initialPrice,
+        initial_price,
+        initial_price,
         stockMonthDuration
       ]
     );
@@ -159,7 +159,7 @@ router.post("/login", async (req, res) => {
 
 /** Stores the new connected_id to the user. Only changes the connected id if
  * it has not been already stored!
- * @param connectedId
+ * @param connected_id
  * @param returnPath
  */
 router.put("/connected", async (req, res) => {
@@ -169,7 +169,7 @@ router.put("/connected", async (req, res) => {
       const shop = await shopQueries.getProfile(req.session.loginId.slice(1));
       if (shop.connected_id === null)
         await shopQueries.update(req.session.loginId.slice(1), {
-          connected_id: req.body.connectedId
+          connected_id: req.body.connected_id
         });
       res.redirect(req.body.returnPath);
     } else res.redirect("/");

@@ -1,6 +1,8 @@
-const formatDates = require("../../../functions/formatDateNumber");
 const pool = require("../../db");
 const queriesText = require("../../queriesText");
+
+const formatDates = require("../../../functions/formatDateNumber");
+const camelCase = require("../../../functions/camelCaseKeys");
 
 /**
  * Shop Queries
@@ -12,7 +14,7 @@ const shopsQueries = {
   getProfile: async id => {
     const shop = await queriesText.shopProfile(id);
     if (shop.rowCount !== 1) throw "Id must be unique and valid";
-    else return shop.rows[0];
+    else return camelCase(shop.rows[0]);
   },
   /** Returns the list of cases from a shop formatted in date, number for graph
    * @return {date, number}

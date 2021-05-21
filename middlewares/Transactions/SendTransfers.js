@@ -14,7 +14,7 @@ const sendTransfers = async (req, res, next) => {
       const transfer = await stripe.transfers.create({
         amount: total,
         currency: "eur",
-        destination: checkout.connectedId,
+        destination: checkout.connected_id,
         transfer_group: req.body.transferGroupId,
         source_transaction: req.session.chargeId
       });

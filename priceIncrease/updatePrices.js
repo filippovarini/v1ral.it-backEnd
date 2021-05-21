@@ -17,10 +17,10 @@ const updatePrices = async firedate => {
 
   // get new price
   const intPrice =
-    "CAST(shops.currentprice + (shops.passes_sold - city_avg) AS INT)";
-  const floatPrice = "shops.currentprice + (shops.passes_sold - city_avg)";
+    "CAST(shops.current_price + (shops.passes_sold - city_avg) AS INT)";
+  const floatPrice = "shops.current_price + (shops.passes_sold - city_avg)";
 
-  const price = `GREATEST(${intPrice}, shops.initialprice) AS new_price`;
+  const price = `GREATEST(${intPrice}, shops.initial_price) AS new_price`;
 
   const updateTable = `
     SELECT 
@@ -29,8 +29,8 @@ const updatePrices = async firedate => {
         ${price}
     FROM    (SELECT 
                 shop.id, 
-                shop.currentprice, 
-                shop.initialprice,
+                shop.current_price, 
+                shop.initial_price,
                 shop.city, 
                 COALESCE(COUNT(premiums.*), 0) AS passes_sold
             FROM shop LEFT JOIN ( SELECT * 
@@ -54,7 +54,7 @@ const updatePrices = async firedate => {
 
   const query = await pool.query(`
     UPDATE shop
-    SET currentprice = update_table.new_price
+    SET current_price = update_table.new_price
     FROM (${updateTable}) AS update_table
     WHERE update_table.id = shop.id
     RETURNING *`);

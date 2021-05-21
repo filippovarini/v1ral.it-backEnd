@@ -1,9 +1,16 @@
 const pool = require("../db");
+const camelCase = require("../../functions/camelCaseKeys");
 
 const priviledgesQueries = {
+  getFromId: async id => {
+    const privs = await pool.query("SELECT * FROM priviledge WHERE shop = $1", [
+      id
+    ]);
+    return privs.rows.map(priv => camelCase(priv));
+  },
   /** Inserts priv */
   insertPriviledge: async (shop, title, description, type) => {
-    await pool.query("INSERT INTO service VALUES ($1, $2, $3, $4)", [
+    await pool.query("INSERT INTO priviledge VALUES ($1, $2, $3, $4)", [
       shop,
       title,
       description,

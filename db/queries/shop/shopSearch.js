@@ -1,6 +1,8 @@
 const queriesText = require("../../queriesText");
 const pool = require("../../db");
+
 const formatPassExpiration = require("../../../functions/formatPassExpiration");
+const camelCase = require("../../../functions/camelCaseKeys");
 
 /** Shop search queries */
 const shopSearch = {
@@ -59,11 +61,12 @@ const shopSearch = {
     const categoryFilter = shopSI.category
       ? shopSI.category.toLowerCase()
       : "%";
+
     const shops = await queriesText.shopList(
       [userId, namePatterns, cityFilter, categoryFilter],
       filter
     );
-    return shops.rows;
+    return shops.rows.map(shop => camelCase(shop));
   },
   /** Gets shop list info from ids */
   getFromIds: async ids => {
@@ -75,7 +78,7 @@ const shopSearch = {
   /** Gets price and connected id from id */
   getPriceFromIds: async ids => {
     const shops = await pool.query(
-      "SELECT id, currentprice, connectedid FROM shop WHERE id = ANY ($1)",
+      "SELECT id, current_price, connected_id FROM shop WHERE id = ANY ($1)",
       [ids]
     );
     if (shops.rowCount !== ids.length)
